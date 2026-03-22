@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GigTix | ライブ・イベントをまるごとサポート</title>
+  <meta name="description" content="GigTixはアーティストとライブハウスをつなぐチケット販売・ライブ運営サポートプラットフォームです。歌詞スライド自動作成ツールも無料提供中。">
+  <meta name="keywords" content="ライブチケット,ライブハウス,ライブ運営,歌詞スライド,プロンプター,イベント運営">
+  <meta property="og:title" content="GigTix | ライブ・イベントをまるごとサポート">
+  <meta property="og:description" content="チケット販売からライブ運営サポートまで。アーティストとライブハウスをつなぐプラットフォーム。">
+  <meta property="og:url" content="https://gigtix.jp">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://gigtix.jp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #080808;
+      --white: #f5f5f0;
+      --amber: #f5a623;
+      --amber2: #e8920f;
+      --red: #e83030;
+      --surface: #111111;
+      --border: #222222;
+      --muted: #666666;
+      --text: #e8e8e0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', 'Noto Sans JP', sans-serif;
+      background: var(--black);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; gap: 0;
+      padding: 0 40px; height: 60px;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px; letter-spacing: 2px;
+      color: var(--amber); text-decoration: none;
+      margin-right: auto;
+    }
+    .nav-logo span { color: var(--white); }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      text-decoration: none; letter-spacing: 0.5px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      margin-left: 24px; padding: 8px 20px;
+      background: var(--amber); color: #000;
+      font-weight: 700; font-size: 13px;
+      border-radius: 6px; text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--amber2); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 24px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(245,166,35,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(232,48,48,0.07) 0%, transparent 60%);
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; margin-bottom: 32px;
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 100px; font-size: 12px; font-weight: 600;
+      color: var(--amber); letter-spacing: 1px; text-transform: uppercase;
+      position: relative;
+    }
+    .hero-tag::before {
+      content: ''; width: 6px; height: 6px;
+      background: var(--amber); border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(64px, 12vw, 140px);
+      line-height: 0.92; letter-spacing: 3px;
+      color: var(--white); margin-bottom: 8px;
+      position: relative;
+    }
+    .hero h1 em {
+      color: var(--amber); font-style: normal;
+      display: block;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 22px);
+      color: var(--muted); margin-bottom: 48px;
+      max-width: 560px; line-height: 1.7;
+      font-weight: 400; position: relative;
+    }
+    .hero-btns {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      justify-content: center; position: relative;
+    }
+    .btn-primary {
+      padding: 16px 36px; background: var(--amber); color: #000;
+      font-weight: 700; font-size: 15px; border-radius: 8px;
+      text-decoration: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { background: var(--amber2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(245,166,35,0.35); }
+    .btn-ghost {
+      padding: 16px 36px; background: transparent;
+      border: 1px solid var(--border); color: var(--text);
+      font-weight: 600; font-size: 15px; border-radius: 8px;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--muted); transform: translateY(-2px); }
+
+    /* scroll indicator */
+    .scroll-hint {
+      position: absolute; bottom: 36px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 11px; letter-spacing: 1px;
+      text-transform: uppercase; animation: fadeInUp 1s 1.5s both;
+    }
+    .scroll-arrow {
+      width: 20px; height: 20px; border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted); transform: rotate(45deg);
+      animation: scrollBounce 1.5s ease-in-out infinite;
+    }
+    @keyframes scrollBounce {
+      0%, 100% { transform: rotate(45deg) translateY(0); }
+      50% { transform: rotate(45deg) translateY(5px); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    /* ── AD STRIP ── */
+    .ad-strip {
+      background: var(--surface); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 40px;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+    }
+    .ad-strip-label {
+      font-size: 9px; color: var(--muted); letter-spacing: 1px;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .ad-banner-slot {
+      flex: 1; max-width: 728px; height: 60px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed #333; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #333;
+    }
+
+    /* ── SECTION BASE ── */
+    section { padding: 100px 24px; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--amber);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(40px, 6vw, 72px);
+      letter-spacing: 2px; color: var(--white);
+      line-height: 1; margin-bottom: 20px;
+    }
+    .section-desc {
+      font-size: 16px; color: var(--muted);
+      max-width: 560px; line-height: 1.8;
+    }
+
+    /* ── SERVICES ── */
+    #services { background: var(--surface); }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1px; background: var(--border);
+      margin-top: 60px; border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .service-card {
+      background: var(--black); padding: 40px 36px;
+      transition: background 0.2s;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .service-card:hover { background: #141414; }
+    .service-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .service-name {
+      font-size: 20px; font-weight: 700; color: var(--white);
+    }
+    .service-desc {
+      font-size: 14px; color: var(--muted); line-height: 1.8; flex: 1;
+    }
+    .service-badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700;
+    }
+    .badge-live { background: rgba(245,166,35,0.15); color: var(--amber); }
+    .badge-coming { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+    /* ── TOOL HIGHLIGHT ── */
+    #tools { position: relative; overflow: hidden; }
+    #tools::before {
+      content: 'TOOL';
+      position: absolute; right: -40px; top: 40px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 220px; color: rgba(255,255,255,0.02);
+      letter-spacing: -8px; pointer-events: none;
+    }
+    .tool-card {
+      margin-top: 60px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+    .tool-info { padding: 52px 48px; display: flex; flex-direction: column; gap: 20px; }
+    .tool-title { font-size: 32px; font-weight: 900; color: var(--white); line-height: 1.2; }
+    .tool-title span { color: var(--amber); }
+    .tool-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .tool-features li {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: var(--muted);
+    }
+    .tool-features li::before {
+      content: '✓'; width: 20px; height: 20px;
+      background: rgba(245,166,35,0.15); color: var(--amber);
+      border-radius: 50%; display: grid; place-items: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .tool-visual {
+      background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px; border-left: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .tool-visual::before {
+      content: '🎤';
+      font-size: 120px; opacity: 0.08;
+      position: absolute; right: -20px; bottom: -20px;
+    }
+    .slide-mockup {
+      width: 100%; max-width: 320px; aspect-ratio: 16/9;
+      background: #000; border-radius: 10px;
+      border: 1px solid #333;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; gap: 8px; position: relative;
+    }
+    .mockup-lyric {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700; text-align: center; line-height: 1.6;
+    }
+    .mockup-badge {
+      position: absolute; top: 8px; right: 10px;
+      background: var(--amber); color: #000;
+      font-size: 9px; font-weight: 800;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .mockup-next {
+      position: absolute; bottom: 8px;
+      font-size: 8px; color: #444; font-style: italic;
+    }
+
+    /* ── FLOW ── */
+    #flow { background: var(--surface); }
+    .flow-steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0; margin-top: 60px; position: relative;
+    }
+    .flow-steps::before {
+      content: ''; position: absolute;
+      top: 36px; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+    .flow-step { padding: 20px 24px; text-align: center; }
+    .step-num {
+      width: 72px; height: 72px; margin: 0 auto 20px;
+      background: var(--black); border: 1px solid var(--border);
+      border-radius: 50%; display: grid; place-items: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--amber);
+      position: relative; z-index: 1;
+    }
+    .step-title { font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ── COMING SOON ── */
+    #coming { text-align: center; }
+    .coming-grid {
+      display: flex; gap: 20px; justify-content: center;
+      flex-wrap: wrap; margin-top: 48px;
+    }
+    .coming-chip {
+      padding: 12px 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; font-size: 14px; font-weight: 600; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .chip-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border);
+    }
+
+    /* ── AD MID ── */
+    .ad-mid {
+      padding: 20px; background: var(--surface);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .ad-mid-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .ad-rect-slot {
+      width: 100%; max-width: 336px; height: 280px;
+      background: rgba(255,255,255,0.02);
+      border: 1px dashed #222; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #333;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 48px 40px 32px;
+    }
+    .footer-inner { max-width: 1100px; margin: 0 auto; }
+    .footer-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 40px; flex-wrap: wrap; margin-bottom: 40px;
+    }
+    .footer-brand .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px; letter-spacing: 2px; color: var(--amber);
+      margin-bottom: 8px;
+    }
+    .footer-brand .logo span { color: var(--white); }
+    .footer-tagline { font-size: 13px; color: var(--muted); }
+    .footer-links { display: flex; gap: 48px; flex-wrap: wrap; }
+    .footer-col h4 {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+    }
+    .footer-col a {
+      display: block; font-size: 14px; color: #555;
+      text-decoration: none; margin-bottom: 8px;
+      transition: color 0.15s;
+    }
+    .footer-col a:hover { color: var(--white); }
+    .footer-bottom {
+      border-top: 1px solid var(--border); padding-top: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-copy { font-size: 12px; color: var(--muted); }
+
+    /* ── ANIMATIONS ── */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .tool-card { grid-template-columns: 1fr; }
+      .tool-visual { display: none; }
+      .footer-top { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">GIG<span>TIX</span></a>
+  <div class="nav-links">
+    <a href="#services">サービス</a>
+    <a href="#tools">ツール</a>
+    <a href="#flow">ご利用の流れ</a>
+    <a href="contact.html">お問い合わせ</a>
+  </div>
+  <a class="nav-cta" href="lyrics-to-slides.html">無料ツールを使う →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">Coming Soon — ライブプラットフォーム β版準備中</div>
+  <h1>YOUR GIG,<em>YOUR WAY.</em></h1>
+  <p class="hero-sub">チケット販売からライブ運営サポートまで。アーティストとライブハウスをつなぐ、ライブのためのプラットフォーム。</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="lyrics-to-slides.html">🎤 歌詞スライドを無料で作る</a>
+    <a class="btn-ghost" href="#services">サービスを見る</a>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-arrow"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- AD STRIP -->
+<div class="ad-strip">
+  <span class="ad-strip-label">AD</span>
+  <div class="ad-banner-slot">広告スペース（728×60 リーダーボード）</div>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-inner">
+    <div class="section-label fade-up">Services</div>
+    <h2 class="section-title fade-up">GIGTIXの<br>できること</h2>
+    <p class="section-desc fade-up">ライブに関わるすべての人の課題を解決するサービスを展開しています。</p>
+
+    <div class="services-grid">
+      <div class="service-card fade-up">
+        <div class="service-icon">🎵</div>
+        <div class="service-name">歌詞スライド変換</div>
+        <div class="service-desc">歌詞をコピペするだけでPowerPointスライドを自動作成。デュエット・合唱・繰り返し検出に対応。ライブのプロンプターとしてすぐ使えます。</div>
+        <span class="service-badge badge-live">✦ 無料公開中</span>
+      </div>
+      <div class="service-card fade-up">
+        <div class="service-icon">🎫</div>
+        <div class="service-name">チケット販売</div>
+        <div class="service-desc">ライブ・イベントのチケットをオンラインで簡単に販売。QRコード入場・売上管理・ファンとの直接つながりをサポートします。</div>
+        <span class="service-badge badge-coming">準備中</span>
+      </div>
+      <div class="service-card fade-up">
+        <div class="service-icon">🤝</div>
+        <div class="service-name">ライブハウス仲介</div>
+        <div class="service-desc">アーティストとライブハウスのマッチングをサポート。出演依頼・会場探し・条件交渉のサポートで、ライブの実現を後押しします。</div>
+        <span class="service-badge badge-coming">準備中</span>
+      </div>
+      <div class="service-card fade-up">
+        <div class="service-icon">🎸</div>
+        <div class="service-name">ライブ運営サポート</div>
+        <div class="service-desc">当日の進行・セットリスト管理・機材手配の相談など、ライブ運営全体をトータルサポート。初めてのライブも安心して開催できます。</div>
+        <span class="service-badge badge-coming">準備中</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL HIGHLIGHT -->
+<section id="tools">
+  <div class="section-inner">
+    <div class="section-label fade-up">Free Tool</div>
+    <h2 class="section-title fade-up">今すぐ使える<br>無料ツール</h2>
+
+    <div class="tool-card fade-up">
+      <div class="tool-info">
+        <div class="tool-title">歌詞スライド<span>変換ツール</span></div>
+        <p style="font-size:14px;color:var(--muted);line-height:1.8">コピペするだけで、ライブ・合唱・イベントで使えるPowerPointスライドを自動生成。API不要・登録不要で完全無料。</p>
+        <ul class="tool-features">
+          <li>ブロック自動分割（Aメロ・サビ・間奏など）</li>
+          <li>デュエット・合唱パートカラー対応</li>
+          <li>繰り返し歌詞の回数バッジ自動付与</li>
+          <li>次の歌詞をスライド下部にプレビュー表示</li>
+          <li>複数曲まとめてダウンロード</li>
+          <li>完全オフライン・インターネット接続不要</li>
+        </ul>
+        <a class="btn-primary" href="lyrics-to-slides.html" style="margin-top:8px;width:fit-content">無料で使ってみる →</a>
+      </div>
+      <div class="tool-visual">
+        <div class="slide-mockup">
+          <div class="mockup-badge">2回目</div>
+          <div class="mockup-lyric" style="color:#fff;font-size:15px">
+            ば・く・れ・つ<br>
+            <span style="color:#60a5fa">君の声が</span><br>
+            <span style="color:#f87171">聞こえる</span>
+          </div>
+          <div class="mockup-next">NEXT ▶  愛してるよ、ずっと</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AD MID -->
+<div class="ad-mid">
+  <span class="ad-mid-label">Advertisement</span>
+  <div class="ad-rect-slot">広告スペース（336×280 レクタングル）</div>
+</div>
+
+<!-- FLOW -->
+<section id="flow">
+  <div class="section-inner">
+    <div class="section-label fade-up">How to Use</div>
+    <h2 class="section-title fade-up">かんたん3ステップ</h2>
+    <div class="flow-steps">
+      <div class="flow-step fade-up">
+        <div class="step-num">01</div>
+        <div class="step-title">歌詞を貼り付ける</div>
+        <div class="step-desc">歌詞サイトからコピーしてそのまま貼り付けるだけ。ブロック名があれば自動認識します。</div>
+      </div>
+      <div class="flow-step fade-up">
+        <div class="step-num">02</div>
+        <div class="step-title">自動解析</div>
+        <div class="step-desc">Aメロ・サビ・間奏など、ブロックを即座に自動分類。パートカラーや繰り返し設定もワンクリック。</div>
+      </div>
+      <div class="flow-step fade-up">
+        <div class="step-num">03</div>
+        <div class="step-title">ダウンロード</div>
+        <div class="step-desc">PowerPoint (.pptx) ファイルをダウンロード。複数曲まとめてZIPでも取得できます。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMING SOON -->
+<section id="coming" style="background:var(--surface)">
+  <div class="section-inner">
+    <div class="section-label fade-up">Roadmap</div>
+    <h2 class="section-title fade-up">近日公開予定</h2>
+    <p class="section-desc fade-up" style="margin:0 auto">チケット販売・ライブハウス仲介など、さらに便利な機能を順次リリース予定です。</p>
+    <div class="coming-grid fade-up">
+      <div class="coming-chip"><div class="chip-dot" style="background:#f5a623"></div>チケット販売システム</div>
+      <div class="coming-chip"><div class="chip-dot"></div>ライブハウスマッチング</div>
+      <div class="coming-chip"><div class="chip-dot"></div>セットリスト管理</div>
+      <div class="coming-chip"><div class="chip-dot"></div>ライブ収支計算ツール</div>
+      <div class="coming-chip"><div class="chip-dot"></div>アーティストページ作成</div>
+      <div class="coming-chip"><div class="chip-dot"></div>ファンクラブ機能</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">GIG<span>TIX</span></div>
+        <div class="footer-tagline">ライブ・イベントをまるごとサポート</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>サービス</h4>
+          <a href="lyrics-to-slides.html">歌詞スライド変換</a>
+          <a href="#services">チケット販売（準備中）</a>
+          <a href="#services">ライブハウス仲介（準備中）</a>
+        </div>
+        <div class="footer-col">
+          <h4>サポート</h4>
+          <a href="contact.html">お問い合わせ</a>
+          <a href="privacy.html">プライバシーポリシー</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 GigTix. All rights reserved.</div>
+      <div style="display:flex;gap:20px">
+        <a href="privacy.html" style="font-size:12px;color:var(--muted);text-decoration:none">プライバシーポリシー</a>
+        <a href="contact.html" style="font-size:12px;color:var(--muted);text-decoration:none">お問い合わせ</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll fade-in
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

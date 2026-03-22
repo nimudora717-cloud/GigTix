@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お問い合わせ | GigTix</title>
+  <meta name="description" content="GigTixへのお問い合わせはこちら。ツールのご質問・ライブ運営サポートのご相談・ライブハウス仲介のご依頼など、お気軽にご連絡ください。">
+  <link rel="canonical" href="https://gigtix.jp/contact.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #080808; --white: #f5f5f0; --amber: #f5a623; --amber2: #e8920f;
+      --surface: #111111; --border: #222222; --muted: #666666; --text: #e8e8e0;
+      --green: #10b981; --red: #f87171;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans','Noto Sans JP',sans-serif; background: var(--black); color: var(--text); }
+    nav {
+      display: flex; align-items: center; padding: 0 40px; height: 60px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: 'Bebas Neue',sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--amber); text-decoration: none; margin-right: auto; }
+    .nav-logo span { color: var(--white); }
+    .back-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+    .back-link:hover { color: var(--white); }
+
+    .page-wrap { max-width: 960px; margin: 0 auto; padding: 72px 24px 100px; }
+    .page-header { margin-bottom: 60px; }
+    h1 { font-family: 'Bebas Neue',sans-serif; font-size: 64px; letter-spacing: 2px; color: var(--white); margin-bottom: 12px; }
+    .page-desc { font-size: 16px; color: var(--muted); line-height: 1.8; max-width: 520px; }
+
+    .contact-grid {
+      display: grid; grid-template-columns: 1fr 360px;
+      gap: 40px; align-items: start;
+    }
+
+    /* Form */
+    .form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px;
+    }
+    .form-group { margin-bottom: 24px; }
+    label {
+      display: block; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .required { color: var(--amber); margin-left: 4px; }
+    input[type="text"], input[type="email"], select, textarea {
+      width: 100%; background: var(--black);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); padding: 12px 16px;
+      font-size: 15px; font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.1);
+    }
+    textarea { resize: vertical; min-height: 140px; line-height: 1.7; }
+    select { cursor: pointer; }
+
+    .submit-btn {
+      width: 100%; padding: 16px; background: var(--amber); color: #000;
+      font-weight: 700; font-size: 16px; border: none; border-radius: 10px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover { background: var(--amber2); transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .form-note { font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.7; }
+    .form-note a { color: var(--amber); }
+
+    .form-status {
+      display: none; padding: 14px 18px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; margin-top: 16px;
+    }
+    .form-status.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); }
+    .form-status.error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+
+    /* Info cards */
+    .info-col { display: flex; flex-direction: column; gap: 16px; }
+    .info-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+    }
+    .info-card h3 {
+      font-size: 16px; font-weight: 700; color: var(--white);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+    }
+    .info-card p { font-size: 14px; color: var(--muted); line-height: 1.8; }
+    .inquiry-types { list-style: none; margin-top: 12px; }
+    .inquiry-types li {
+      font-size: 13px; color: var(--muted);
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .inquiry-types li:last-child { border-bottom: none; }
+    .inquiry-types li::before { content: '→'; color: var(--amber); font-size: 12px; }
+
+    .response-time {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; background: rgba(245,166,35,0.08);
+      border: 1px solid rgba(245,166,35,0.2); border-radius: 10px;
+      font-size: 13px; color: var(--amber); font-weight: 600; margin-top: 8px;
+    }
+
+    footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+    footer a { color: var(--amber); }
+
+    @media (max-width: 768px) {
+      .contact-grid { grid-template-columns: 1fr; }
+      nav { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html">GIG<span>TIX</span></a>
+  <a class="back-link" href="index.html">← トップへ戻る</a>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>CONTACT</h1>
+    <p class="page-desc">ツールのご質問・ライブ運営サポートのご相談・ライブハウス仲介のご依頼など、お気軽にご連絡ください。</p>
+  </div>
+
+  <div class="contact-grid">
+
+    <!-- フォーム -->
+    <div class="form-card">
+      <form id="contactForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label>お名前<span class="required">*</span></label>
+          <input type="text" id="name" placeholder="山田 太郎" required>
+        </div>
+        <div class="form-group">
+          <label>メールアドレス<span class="required">*</span></label>
+          <input type="email" id="email" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>お問い合わせ種別<span class="required">*</span></label>
+          <select id="category" required>
+            <option value="">選択してください</option>
+            <option value="tool">歌詞スライドツールについて</option>
+            <option value="ticket">チケット販売について</option>
+            <option value="livehouse">ライブハウス仲介について</option>
+            <option value="support">ライブ運営サポートについて</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>メッセージ<span class="required">*</span></label>
+          <textarea id="message" placeholder="お問い合わせ内容をご記入ください。" required></textarea>
+        </div>
+        <button class="submit-btn" type="submit" id="submitBtn">送信する</button>
+        <p class="form-note">
+          送信いただいた情報は、お問い合わせへの対応にのみ使用します。<br>
+          詳しくは<a href="privacy.html">プライバシーポリシー</a>をご確認ください。
+        </p>
+        <div class="form-status" id="formStatus"></div>
+      </form>
+    </div>
+
+    <!-- 右側情報 -->
+    <div class="info-col">
+      <div class="info-card">
+        <h3>🎵 こんなご相談もOK</h3>
+        <ul class="inquiry-types">
+          <li>ツールの使い方・機能のご要望</li>
+          <li>ライブ・イベントの運営相談</li>
+          <li>ライブハウスとのマッチング希望</li>
+          <li>チケット販売の事前登録</li>
+          <li>広告・掲載のご相談</li>
+          <li>取材・メディア掲載</li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h3>⏱ 返信について</h3>
+        <p>通常2〜3営業日以内にご返信いたします。</p>
+        <div class="response-time">
+          ✦ 返信目安：2〜3営業日
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>🔒 安心してご連絡ください</h3>
+        <p>いただいた情報は、お問い合わせへの対応以外には使用しません。第三者への提供も行いません。</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>© 2025 GigTix — <a href="index.html">トップへ</a> | <a href="privacy.html">プライバシーポリシー</a></footer>
+
+<script>
+// Formspree（無料メールフォームサービス）を使った送信
+// ★公開前にhttps://formspree.io でフォームを作成し、エンドポイントURLを差し替える★
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/YOUR_FORM_ID';
+
+async function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const status = document.getElementById('formStatus');
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+  status.style.display = 'none';
+
+  const data = {
+    name:     document.getElementById('name').value,
+    email:    document.getElementById('email').value,
+    category: document.getElementById('category').value,
+    message:  document.getElementById('message').value,
+  };
+
+  try {
+    const res = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      status.textContent = '✅ 送信が完了しました。2〜3営業日以内にご返信いたします。';
+      status.className = 'form-status success';
+      document.getElementById('contactForm').reset();
+    } else {
+      throw new Error('送信に失敗しました');
+    }
+  } catch {
+    status.textContent = '❌ 送信に失敗しました。時間をおいて再度お試しください。';
+    status.className = 'form-status error';
+  } finally {
+    status.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '送信する';
+  }
+}
+</script>
+</body>
+</html>

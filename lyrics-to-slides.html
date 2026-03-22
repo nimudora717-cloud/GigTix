@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>歌詞スライド変換ツール - 無料・登録不要 | GigTix</title>
+  <meta name="description" content="歌詞をコピペするだけでライブ・合唱・イベント用PowerPointスライドを無料自動作成。デュエット対応・繰り返し回数表示・次の歌詞プレビュー・複数曲一括ダウンロード。API不要で完全無料。">
+  <meta name="keywords" content="歌詞スライド,プロンプター,PowerPoint自動作成,ライブ,合唱,デュエット,歌詞 スライド 無料,プロンプター 作り方">
+  <meta property="og:title" content="歌詞スライド変換ツール | GigTix">
+  <meta property="og:description" content="歌詞をコピペするだけでライブ用PowerPointを無料作成。デュエット・繰り返し対応。">
+  <meta property="og:url" content="https://gigtix.jp/lyrics-to-slides.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://gigtix.jp/lyrics-to-slides.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07070f; --surface: #0e0e1e; --card: #12122a;
+      --border: #1e1e3a; --border-hi: #2e2e5a;
+      --amber: #f59e0b; --amber-dim: #92600a;
+      --green: #10b981; --red: #f87171;
+      --text: #e8e8f5; --muted: #5a5a88;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit','Noto Sans JP',sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 0 32px; height: 64px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--amber), #e67e00);
+      border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; box-shadow: 0 0 16px rgba(245,158,11,.35);
+    }
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .badge {
+      margin-left: 4px; padding: 2px 8px; font-size: 10px; font-weight: 600;
+      background: rgba(245,158,11,.15); color: var(--amber);
+      border: 1px solid rgba(245,158,11,.3); border-radius: 100px; letter-spacing: .5px;
+    }
+    .header-right { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+    /* ── Layout ── */
+    .layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 64px); }
+    .main-panel {
+      padding: 28px 28px 28px 32px;
+      display: flex; flex-direction: column; gap: 20px;
+      border-right: 1px solid var(--border);
+    }
+    .side-panel {
+      padding: 24px; display: flex; flex-direction: column; gap: 18px;
+      position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px;
+    }
+    .card-title { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .step-dot {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--amber); color: #000;
+      font-size: 11px; font-weight: 800;
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .card-title h2 { font-size: 14px; font-weight: 600; }
+
+    /* ── Inputs ── */
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+    input[type="text"], textarea, select {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      padding: 10px 13px; font-size: 14px; font-family: inherit;
+      transition: border-color .2s, box-shadow .2s; width: 100%;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245,158,11,.1);
+    }
+    textarea { resize: vertical; line-height: 1.7; }
+
+    /* ── Buttons ── */
+    .btn {
+      border: none; cursor: pointer; border-radius: 10px;
+      font-family: inherit; font-weight: 600;
+      transition: all .18s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+    .btn-amber {
+      background: linear-gradient(135deg,#f59e0b,#d97706);
+      color: #000; padding: 12px 20px; font-size: 14px;
+      width: 100%; margin-top: 12px; box-shadow: 0 4px 20px rgba(245,158,11,.2);
+    }
+    .btn-amber:hover:not(:disabled) { background: linear-gradient(135deg,#fbbf24,#f59e0b); transform: translateY(-1px); }
+    .btn-green {
+      background: linear-gradient(135deg,#10b981,#059669);
+      color: #fff; padding: 13px 20px; font-size: 15px; width: 100%;
+      box-shadow: 0 4px 20px rgba(16,185,129,.2);
+    }
+    .btn-green:hover:not(:disabled) { background: linear-gradient(135deg,#34d399,#10b981); transform: translateY(-1px); }
+    .btn-danger {
+      background: transparent; border: 1px solid rgba(248,113,113,.2);
+      color: var(--red); padding: 4px 9px; font-size: 11px; border-radius: 7px;
+      cursor: pointer; font-family: inherit; font-weight: 600;
+    }
+    .btn-danger:hover { background: rgba(248,113,113,.08); }
+    .btn-add-block {
+      background: transparent; border: 1px dashed var(--border);
+      color: var(--muted); padding: 10px; font-size: 13px;
+      width: 100%; border-radius: 12px; margin-top: 8px;
+      cursor: pointer; font-family: inherit; font-weight: 500; transition: all .18s;
+    }
+    .btn-add-block:hover { border-color: var(--amber-dim); color: var(--amber); }
+
+    /* ── Split buttons ── */
+    .split-btns { display: flex; gap: 2px; }
+    .split-btn {
+      width: 24px; height: 22px; border-radius: 6px;
+      font-size: 10px; font-weight: 800;
+      background: var(--subtle, #1a1a38); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; font-family: inherit;
+      transition: all .12s; display: grid; place-items: center;
+    }
+    .split-btn.active {
+      background: rgba(245,158,11,.15);
+      border-color: rgba(245,158,11,.5); color: var(--amber);
+    }
+    .split-btn:hover:not(.active) { border-color: var(--border-hi); color: var(--text); }
+
+    /* ── Block cards ── */
+    .blocks-list { display: flex; flex-direction: column; gap: 10px; }
+    .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .5; }
+
+    .block-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; animation: slideIn .2s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; } }
+
+    .block-header {
+      display: flex; align-items: center; gap: 7px; padding: 9px 12px;
+      background: rgba(245,158,11,.04); border-bottom: 1px solid var(--border);
+    }
+    .block-num { font-size: 10px; font-weight: 700; color: var(--muted); min-width: 16px; }
+    .block-label-input {
+      background: transparent; border: 1px solid transparent; border-radius: 6px;
+      color: var(--amber); font-weight: 700; font-size: 13px;
+      padding: 3px 7px; font-family: inherit; flex: 1; min-width: 0;
+    }
+    .block-label-input:focus { outline: none; background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3); }
+    .block-line-count { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Slide badge on block (shows "→ 2 slides") ── */
+    .block-slide-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 6px;
+      background: rgba(245,158,11,.1); color: var(--amber);
+      border-radius: 5px; white-space: nowrap;
+    }
+    /* オーバーフロー警告バッジ */
+    .overflow-warn {
+      font-size: 10px; font-weight: 700; padding: 2px 7px;
+      background: rgba(248,113,113,.15); color: var(--red);
+      border: 1px solid rgba(248,113,113,.3);
+      border-radius: 5px; white-space: nowrap; cursor: help;
+    }
+    /* プレビューボタン */
+    .btn-preview {
+      background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3);
+      color: var(--amber); padding: 4px 10px; font-size: 11px; font-weight: 700;
+      border-radius: 7px; cursor: pointer; font-family: inherit;
+      transition: all .15s; white-space: nowrap;
+    }
+    .btn-preview:hover { background: rgba(245,158,11,.22); }
+
+    /* ── フルスクリーン スライドプレビューモーダル ── */
+    .slide-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9998;
+      background: rgba(0,0,0,.95); backdrop-filter: blur(8px);
+      flex-direction: column; align-items: center; justify-content: center;
+    }
+    .slide-modal-overlay.show { display: flex; }
+    .slide-modal-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 24px; width: 100%; max-width: 1100px;
+      color: var(--muted); font-size: 13px;
+    }
+    .slide-modal-title { font-weight: 700; color: var(--text); }
+    .slide-modal-close {
+      margin-left: auto; background: rgba(255,255,255,.08); border: none;
+      color: var(--text); width: 32px; height: 32px; border-radius: 8px;
+      cursor: pointer; font-size: 18px; display: grid; place-items: center;
+      transition: background .15s;
+    }
+    .slide-modal-close:hover { background: rgba(255,255,255,.15); }
+    /* スライドビューエリア */
+    .slide-viewport {
+      width: 100%; max-width: 1000px;
+      aspect-ratio: 16/9; position: relative;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,.7);
+      flex-shrink: 0;
+    }
+    .slide-frame {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 4% 6%; position: relative;
+    }
+    .slide-frame-lyrics {
+      text-align: center; font-weight: 700; line-height: 1.55;
+      width: 100%; word-break: break-all;
+    }
+    .slide-frame-next {
+      position: absolute; bottom: 3%; left: 4%; right: 4%;
+      text-align: center; font-style: italic; opacity: .55;
+    }
+    .slide-frame-badge {
+      position: absolute; font-weight: 800; border-radius: 6px;
+      padding: 2px 10px;
+    }
+    /* ナビゲーション */
+    .slide-nav {
+      display: flex; align-items: center; gap: 20px; margin-top: 18px;
+    }
+    .slide-nav-btn {
+      background: rgba(255,255,255,.08); border: none;
+      color: var(--text); width: 44px; height: 44px; border-radius: 50%;
+      cursor: pointer; font-size: 20px; display: grid; place-items: center;
+      transition: background .15s;
+    }
+    .slide-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,.16); }
+    .slide-nav-btn:disabled { opacity: .25; cursor: not-allowed; }
+    .slide-nav-counter {
+      font-size: 14px; color: var(--muted); min-width: 80px; text-align: center;
+    }
+    .slide-nav-counter strong { color: var(--text); }
+    /* サムネイル */
+    .slide-thumbs {
+      display: flex; gap: 8px; padding: 12px 24px;
+      max-width: 1000px; width: 100%; overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .slide-thumb {
+      flex-shrink: 0; width: 90px; aspect-ratio: 16/9;
+      border-radius: 6px; overflow: hidden; cursor: pointer;
+      border: 2px solid transparent; transition: border-color .15s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7px; font-weight: 700; text-align: center;
+      padding: 4px; word-break: break-all; line-height: 1.3;
+    }
+    .slide-thumb.active { border-color: var(--amber); }
+    .slide-thumb:hover { border-color: rgba(245,158,11,.5); }
+
+    /* ── Line rows ── */
+    .block-lines { padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; }
+    .line-row { display: flex; align-items: center; gap: 5px; padding: 2px 0; position: relative; }
+
+    /* ── 静的ディバイダー（互換用・非表示） ── */
+    .split-divider { display: none; }
+    .split-divider-line { display: none; }
+    .split-divider-label { display: none; }
+
+    /* ── インタラクティブ分割ゾーン ── */
+    .split-gap {
+      display: flex; align-items: center; gap: 0;
+      height: 18px; margin: 0 2px; padding: 0 2px;
+      border-radius: 5px; cursor: pointer; position: relative;
+      transition: background .12s;
+    }
+    .split-gap:not(.active):hover {
+      background: rgba(245,158,11,.07);
+    }
+    /* 非アクティブ: ホバー時に「＋ ここで分割」ヒント */
+    .split-gap-hint {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-size: 10px; font-weight: 700; color: rgba(245,158,11,.6);
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s; z-index: 1;
+    }
+    .split-gap:not(.active):hover .split-gap-hint { opacity: 1; }
+    /* 細線（常時うっすら表示） */
+    .split-gap-line {
+      flex: 1; height: 1px;
+      background: rgba(255,255,255,.04);
+      transition: background .12s;
+    }
+    .split-gap:not(.active):hover .split-gap-line {
+      background: repeating-linear-gradient(90deg, rgba(245,158,11,.25) 0, rgba(245,158,11,.25) 4px, transparent 4px, transparent 8px);
+    }
+    /* アクティブ: 実ディバイダー */
+    .split-gap.active {
+      height: 26px; cursor: default;
+    }
+    .split-gap.active .split-gap-line {
+      background: repeating-linear-gradient(90deg, rgba(245,158,11,.55) 0, rgba(245,158,11,.55) 6px, transparent 6px, transparent 10px);
+    }
+    .split-gap-label {
+      font-size: 10px; font-weight: 700; color: rgba(245,158,11,.8);
+      white-space: nowrap; letter-spacing: .5px; padding: 0 6px;
+      display: none;
+    }
+    .split-gap.active .split-gap-label { display: block; }
+    /* ✕ 削除ボタン（アクティブ・ホバー時のみ） */
+    .split-gap-rm {
+      display: none; background: transparent; border: none;
+      color: rgba(248,113,113,.5); cursor: pointer; font-size: 13px;
+      padding: 0 5px; border-radius: 4px; font-family: inherit;
+      line-height: 1; flex-shrink: 0;
+      transition: color .12s;
+    }
+    .split-gap.active:hover .split-gap-rm { display: block; }
+    .split-gap.active:hover { background: rgba(248,113,113,.04); cursor: pointer; }
+    .split-gap-rm:hover { color: var(--red); }
+
+    /* Part pills */
+    .part-pills { display: flex; gap: 3px; flex-shrink: 0; }
+    .part-pill {
+      width: 22px; height: 22px; border-radius: 6px;
+      font-size: 9px; font-weight: 800; border: 2px solid transparent;
+      cursor: pointer; display: grid; place-items: center;
+      transition: all .12s; font-family: inherit;
+    }
+    .part-pill.pill-all { background: rgba(90,90,136,.2); color: var(--muted); }
+    .part-pill.pill-all.active { border-color: var(--muted); background: rgba(90,90,136,.4); color: var(--text); }
+    .part-pill.pill-part { opacity: .3; }
+    .part-pill.pill-part.active { opacity: 1; border-color: rgba(255,255,255,.4); }
+    .part-pill:hover { transform: scale(1.1); }
+
+    .line-text-input {
+      flex: 1; background: rgba(0,0,0,.2); border: 1px solid transparent;
+      border-radius: 7px; font-size: 13px; padding: 5px 9px;
+      font-family: inherit; transition: border-color .15s;
+    }
+    .line-text-input:focus { outline: none; border-color: var(--border-hi); }
+
+    .line-del-btn {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px;
+      opacity: 0; transition: opacity .15s, color .15s;
+    }
+    .line-row:hover .line-del-btn { opacity: 1; }
+    .line-del-btn:hover { color: var(--red); }
+
+    /* 行分割ボタン */
+    .line-split-btn {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px;
+      opacity: 0; transition: opacity .15s, color .15s;
+      white-space: nowrap; font-weight: 700;
+    }
+    .line-row:hover .line-split-btn { opacity: 1; }
+    .line-split-btn:hover { color: var(--green); }
+
+    /* 文字数インジケーター（長い行に表示） */
+    .line-len-badge {
+      font-size: 10px; font-weight: 700; padding: 1px 5px;
+      border-radius: 4px; flex-shrink: 0;
+      opacity: 0; transition: opacity .15s;
+      pointer-events: none;
+    }
+    .line-row:hover .line-len-badge { opacity: 1; }
+    .line-len-badge.warn { background: rgba(248,113,113,.18); color: var(--red); }
+    .line-len-badge.ok   { background: rgba(90,90,136,.2);    color: var(--muted); }
+
+    .add-line-btn {
+      width: 100%; background: transparent; border: none;
+      color: var(--muted); cursor: pointer; font-size: 11px;
+      padding: 5px 4px; border-radius: 6px; font-family: inherit;
+      transition: all .15s; text-align: left;
+    }
+    .add-line-btn:hover { color: var(--text); background: rgba(255,255,255,.03); }
+
+    /* ── Parts panel ── */
+    .parts-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .toggle-switch { position: relative; width: 38px; height: 22px; cursor: pointer; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0; background: var(--border); border-radius: 100px; transition: .2s;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--amber); }
+    .toggle-switch input:checked + .toggle-track::after { transform: translateX(16px); }
+
+    .parts-list { display: flex; flex-direction: column; gap: 7px; }
+    .part-def-row { display: flex; align-items: center; gap: 8px; }
+    .part-color-pick {
+      width: 32px; height: 32px; border: 2px solid var(--border); border-radius: 8px;
+      padding: 2px; cursor: pointer; background: transparent; flex-shrink: 0;
+    }
+    .part-name-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 13px;
+      padding: 6px 10px; font-family: inherit;
+    }
+    .part-name-input:focus { outline: none; border-color: var(--amber); }
+
+    .add-part-btn {
+      width: 100%; background: transparent; border: 1px dashed var(--border);
+      color: var(--muted); padding: 7px; font-size: 12px; border-radius: 8px;
+      cursor: pointer; font-family: inherit; margin-top: 4px; transition: all .15s;
+    }
+    .add-part-btn:hover { border-color: var(--amber-dim); color: var(--amber); }
+
+    .hint-box {
+      background: rgba(6,182,212,.06); border: 1px solid rgba(6,182,212,.18);
+      border-radius: 9px; padding: 10px 12px;
+      font-size: 12px; color: #67e8f9; line-height: 1.6; margin-bottom: 12px;
+    }
+    .part-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .legend-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+    }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ── Design ── */
+    .preset-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .preset-btn {
+      flex: 1; padding: 6px 4px; font-size: 10px; font-weight: 600;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px; cursor: pointer;
+      font-family: inherit; transition: all .15s;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+    .preset-btn:hover { border-color: var(--border-hi); color: var(--text); }
+    .preset-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,.05); }
+    .preset-swatch { width: 28px; height: 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.1); }
+
+    .design-grid { display: flex; flex-direction: column; gap: 11px; }
+    .design-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .design-label { font-size: 12px; color: var(--muted); flex: 1; }
+
+    input[type="color"] {
+      width: 36px; height: 28px; border: 1px solid var(--border);
+      border-radius: 7px; cursor: pointer; padding: 2px; background: transparent;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--amber); cursor: pointer; }
+    .range-val { min-width: 36px; text-align: right; font-size: 12px; color: var(--amber); font-weight: 600; }
+    select { padding: 6px 10px; font-size: 13px; cursor: pointer; max-width: 140px; }
+
+    .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+    /* ── Preview ── */
+    .preview-wrap { aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .slide-preview {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 12px 16px; position: relative; transition: background .3s;
+    }
+    .preview-block-label { position: absolute; top: 7px; left: 10px; font-size: 9px; font-weight: 700; }
+    .preview-lyrics { text-align: center; font-weight: 600; line-height: 1.7; }
+    .preview-next { position: absolute; bottom: 7px; left: 10px; right: 10px; text-align: center; font-size: 7px; font-weight: 500; }
+
+    /* ── Status ── */
+    .status { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 18px; display: flex; align-items: center; gap: 6px; }
+    .status.ok { color: var(--green); }
+    .status.err { color: var(--red); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { display: inline-block; animation: spin .9s linear infinite; }
+
+    .slide-count-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: rgba(245,158,11,.04);
+      border: 1px solid rgba(245,158,11,.12); border-radius: 10px; font-size: 13px; margin-top: 4px;
+    }
+    .count-chip {
+      background: var(--amber); color: #000; font-weight: 800; font-size: 15px;
+      min-width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+    }
+
+    /* Next preview setting row */
+    .next-preview-settings { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .count-select-row { display: flex; gap: 5px; }
+    .count-opt {
+      flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 700;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px; cursor: pointer;
+      font-family: inherit; transition: all .15s; text-align: center;
+    }
+    .count-opt.active { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,.05); }
+    .count-opt:hover:not(.active) { border-color: var(--border-hi); color: var(--text); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* ── インタースティシャル広告モーダル ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.82); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px 28px 24px;
+      max-width: 520px; width: 92%; position: relative;
+      box-shadow: 0 24px 80px rgba(0,0,0,.6);
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(.92) translateY(16px); } to { opacity:1; transform:none; } }
+    .modal-title {
+      font-size: 14px; font-weight: 700; color: var(--muted);
+      letter-spacing: .8px; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .modal-ad-area {
+      width: 100%; min-height: 160px; background: rgba(255,255,255,.03);
+      border: 1px dashed var(--border-hi); border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 8px; padding: 20px;
+      margin-bottom: 18px;
+    }
+    .modal-ad-label { font-size: 10px; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+
+    /* アフィリエイト枠 */
+    .modal-affiliate {
+      display: flex; gap: 12px; margin-bottom: 18px;
+    }
+    .affiliate-card {
+      flex: 1; background: rgba(255,255,255,.04);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; display: flex; flex-direction: column;
+      align-items: center; gap: 6px; cursor: pointer;
+      transition: all .15s; text-decoration: none;
+    }
+    .affiliate-card:hover { border-color: var(--amber); background: rgba(245,158,11,.05); }
+    .affiliate-icon { font-size: 26px; }
+    .affiliate-label { font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; line-height: 1.4; }
+    .affiliate-sub { font-size: 10px; color: var(--border-hi); text-align: center; }
+
+    /* カウントダウン + ダウンロードボタン */
+    .modal-footer { display: flex; align-items: center; gap: 12px; }
+    .countdown-ring {
+      position: relative; width: 44px; height: 44px; flex-shrink: 0;
+    }
+    .countdown-ring svg { transform: rotate(-90deg); }
+    .countdown-ring circle {
+      fill: none; stroke: var(--border); stroke-width: 3;
+    }
+    .countdown-ring .progress {
+      stroke: var(--amber); stroke-linecap: round;
+      stroke-dasharray: 113; stroke-dashoffset: 113;
+      transition: stroke-dashoffset .9s linear;
+    }
+    .countdown-num {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: var(--amber);
+    }
+    .modal-dl-btn {
+      flex: 1; background: linear-gradient(135deg,#10b981,#059669);
+      color: #fff; padding: 13px 20px; font-size: 15px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: inherit; opacity: .35; pointer-events: none;
+      transition: opacity .3s, transform .18s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .modal-dl-btn.ready { opacity: 1; pointer-events: auto; }
+    .modal-dl-btn.ready:hover { transform: translateY(-1px); }
+    .modal-skip-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+    .song-tab-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 32px 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; flex-wrap: nowrap;
+    }
+    .song-tab-bar::-webkit-scrollbar { height: 4px; }
+    .song-tab-bar::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+    .song-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 14px; border-radius: 10px 10px 0 0;
+      background: transparent; border: 1px solid transparent;
+      border-bottom: none; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      color: var(--muted); white-space: nowrap;
+      transition: all .15s; position: relative; bottom: -1px;
+      min-width: 0; max-width: 180px;
+    }
+    .song-tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
+    .song-tab.active {
+      background: var(--bg); border-color: var(--border);
+      border-bottom-color: var(--bg); color: var(--amber);
+    }
+    .song-tab-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 120px; font-size: 13px;
+    }
+    .song-tab-del {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--muted); font-size: 14px; padding: 0 2px;
+      border-radius: 4px; line-height: 1; flex-shrink: 0;
+      transition: color .15s;
+    }
+    .song-tab-del:hover { color: var(--red); }
+    .song-tab-add {
+      background: transparent; border: 1px dashed var(--border);
+      color: var(--muted); cursor: pointer; font-family: inherit;
+      font-size: 13px; font-weight: 700; padding: 6px 14px;
+      border-radius: 10px 10px 0 0; white-space: nowrap;
+      transition: all .15s; bottom: -1px; position: relative;
+    }
+    .song-tab-add:hover { border-color: var(--amber-dim); color: var(--amber); }
+
+    /* 全曲ダウンロードボタン */
+    .btn-all-dl {
+      background: linear-gradient(135deg,#7c3aed,#5b21b6);
+      color: #fff; padding: 11px 18px; font-size: 14px;
+      width: 100%; margin-top: 10px;
+      box-shadow: 0 4px 18px rgba(124,58,237,.25);
+      border: none; cursor: pointer; border-radius: 10px;
+      font-family: inherit; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all .18s;
+    }
+    .btn-all-dl:hover:not(:disabled) { background: linear-gradient(135deg,#8b5cf6,#7c3aed); transform: translateY(-1px); }
+    .btn-all-dl:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .songs-count-badge {
+      background: rgba(255,255,255,.2); border-radius: 100px;
+      padding: 1px 7px; font-size: 11px; font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎤</div>
+    <span class="logo-text">歌詞スライド変換</span>
+    <span class="badge">完全無料</span>
+  </div>
+  <div style="margin-left:16px;font-size:12px;color:var(--muted)">by <a href="index.html" style="color:var(--amber);text-decoration:none;font-weight:700">GigTix</a></div>
+  <div class="header-right" style="margin-left:auto">
+    <!-- AD SLOT: Header Banner (728×90) -->
+    <div style="min-width:300px;height:40px;background:rgba(255,255,255,.04);border:1px dashed #2e2e5a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5a5a88;letter-spacing:.5px">【広告スペース 728×90】</div>
+  </div>
+</header>
+
+<!-- インタースティシャル広告モーダル -->
+<div class="modal-overlay" id="dlModal">
+  <div class="modal-box">
+    <div class="modal-title">ダウンロードの準備</div>
+
+    <!-- 動画広告スロット（縦長レクタングル or 動画ユニット） -->
+    <div class="modal-ad-area" id="modalAdSlot">
+      <div class="modal-ad-label">Advertisement</div>
+      <!-- ★ここにAdSense動画広告コードを貼り付ける★ -->
+      <div style="width:100%;max-width:468px;height:120px;background:rgba(255,255,255,.03);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#2e2e5a">
+        広告スペース（468×60 / 動画広告ユニット推奨）
+      </div>
+    </div>
+
+    <!-- アフィリエイトカード -->
+    <div class="modal-affiliate">
+      <!-- ★Amazonアソシエイトリンクに差し替える★ -->
+      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink1">
+        <span class="affiliate-icon">🎤</span>
+        <span class="affiliate-label">ワイヤレスマイク<br>をAmazonで</span>
+        <span class="affiliate-sub">📦 PR</span>
+      </a>
+      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink2">
+        <span class="affiliate-icon">🔊</span>
+        <span class="affiliate-label">PAスピーカー<br>をAmazonで</span>
+        <span class="affiliate-sub">📦 PR</span>
+      </a>
+      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink3">
+        <span class="affiliate-icon">💡</span>
+        <span class="affiliate-label">ステージ照明<br>をAmazonで</span>
+        <span class="affiliate-sub">📦 PR</span>
+      </a>
+    </div>
+
+    <!-- カウントダウン + ダウンロードボタン -->
+    <div class="modal-footer">
+      <div class="countdown-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="18"/>
+          <circle class="progress" id="cdProgress" cx="22" cy="22" r="18"/>
+        </svg>
+        <div class="countdown-num" id="cdNum">5</div>
+      </div>
+      <button class="modal-dl-btn" id="modalDlBtn" onclick="execDownload()">
+        <span>⬇</span> <span id="modalDlLabel">ダウンロード</span>
+      </button>
+    </div>
+    <div class="modal-skip-note">広告を確認いただくとダウンロードボタンが有効になります</div>
+  </div>
+</div>
+
+<!-- フルスクリーン スライドプレビューモーダル -->
+<div class="slide-modal-overlay" id="slidePreviewModal">
+  <div class="slide-modal-header">
+    <span class="slide-modal-title" id="modalSongTitle">プレビュー</span>
+    <span id="modalSlideInfo" style="color:var(--muted)"></span>
+    <button class="slide-modal-close" onclick="closeSlideModal()">✕</button>
+  </div>
+  <div class="slide-viewport">
+    <div class="slide-frame" id="slideFrame"></div>
+  </div>
+  <div class="slide-nav">
+    <button class="slide-nav-btn" id="prevSlideBtn" onclick="navigateSlide(-1)">‹</button>
+    <div class="slide-nav-counter"><strong id="slideNavCur">1</strong> / <span id="slideNavTotal">1</span></div>
+    <button class="slide-nav-btn" id="nextSlideBtn" onclick="navigateSlide(1)">›</button>
+  </div>
+  <div class="slide-thumbs" id="slideThumbs"></div>
+</div>
+
+<!-- 曲タブバー -->
+<div class="song-tab-bar" id="songTabBar"></div>
+
+<div class="layout">
+
+  <!-- ─── MAIN ─── -->
+  <div class="main-panel">
+
+    <!-- Step 1 -->
+    <div class="card">
+      <div class="card-title"><div class="step-dot">1</div><h2>曲名・歌詞を入力</h2></div>
+      <div class="input-row">
+        <div class="field">
+          <label>曲名</label>
+          <input type="text" id="songTitle" placeholder="例：愛の歌">
+        </div>
+        <div class="field" style="flex:0 0 160px">
+          <label>アーティスト名（任意）</label>
+          <input type="text" id="artistName" placeholder="例：山田バンド">
+        </div>
+      </div>
+      <div class="field">
+        <label>歌詞</label>
+        <textarea id="lyricsInput" rows="10" placeholder="歌詞をここに貼り付けてください。
+
+【ブロック名を書くとより正確に分類できます】
+[Aメロ]
+1行目の歌詞...
+
+[サビ]
+サビの歌詞...
+
+※ブロック名なしでも空行区切りで自動分割します
+※「[サビ]」「【Aメロ】」「サビ：」など各種形式に対応"></textarea>
+      </div>
+      <button class="btn btn-amber" onclick="parseLyrics()" id="parseBtn">
+        <span>⚡</span> 自動解析（無料・即時）
+      </button>
+      <div class="status" id="parseStatus"></div>
+    </div>
+
+    <!-- AD SLOT: Between Step1 and Step2 (Rectangle 336×280) -->
+    <div id="ad-mid" style="background:rgba(255,255,255,.03);border:1px dashed #2e2e5a;border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80px;gap:6px">
+      <span style="font-size:10px;color:#5a5a88;letter-spacing:.8px;text-transform:uppercase">Advertisement</span>
+      <div style="width:100%;max-width:336px;height:60px;background:rgba(255,255,255,.03);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#2e2e5a">
+        広告スペース（336×280 レクタングル推奨）
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="card">
+      <div class="card-title">
+        <div class="step-dot">2</div>
+        <h2>ブロック確認・分割・パート割り当て</h2>
+        <button class="btn-preview" onclick="openSlideModal()" style="margin-left:auto" id="previewAllBtn">👁 スライドプレビュー</button>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.8">
+        ブロックヘッダーの <span style="color:var(--amber);font-weight:700">×1 ÷2〜÷6</span> でスライド分割数を設定できます。
+        <span style="color:var(--red);font-weight:600">⚠️バッジ</span> が出たときは文字がはみ出る可能性があります。分割数を増やすか文字サイズを下げて解決できます。
+      </div>
+
+      <div id="slideCountBar" style="display:none" class="slide-count-bar">
+        <span class="count-chip" id="slideCountNum">0</span>
+        <span style="color:var(--muted)">枚のスライドが生成されます（タイトル含む）</span>
+      </div>
+
+      <div class="blocks-list" id="blocksList" style="margin-top:14px">
+        <div class="empty-state">
+          <div class="icon">🎵</div>
+          歌詞を貼り付けて「自動解析」を押すと<br>ここにブロックが表示されます
+        </div>
+      </div>
+      <button class="btn-add-block" onclick="addBlock()">＋ ブロックを手動追加</button>
+    </div>
+
+  </div>
+
+  <!-- ─── SIDE ─── -->
+  <div class="side-panel">
+
+    <!-- Parts -->
+    <div class="card">
+      <div class="card-title"><div class="step-dot">3</div><h2>パートカラー設定</h2></div>
+      <div class="parts-toggle-row">
+        <label class="toggle-switch">
+          <input type="checkbox" id="partsEnabled" onchange="onPartsToggle()">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:13px;color:var(--muted)" id="partsToggleLabel">パートカラーを使用しない</span>
+      </div>
+      <div id="partsConfig" style="display:none">
+        <div class="hint-box">
+          各行の左の丸ボタンでパートを割り当てると、スライドの文字色がパートごとに変わります。<br>
+          <strong>全</strong>ボタン = メインカラー（全員）。
+        </div>
+        <div class="parts-list" id="partsList"></div>
+        <button class="add-part-btn" onclick="addPart()" id="addPartBtn">＋ パートを追加（最大5つ）</button>
+        <div class="part-legend" id="partLegend"></div>
+      </div>
+    </div>
+
+    <!-- Design -->
+    <div class="card">
+      <div class="card-title"><div class="step-dot" id="stepDesign">4</div><h2>スライドデザイン</h2></div>
+
+      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:8px;text-transform:uppercase">プリセット</div>
+      <div class="preset-row">
+        <button class="preset-btn active" id="preset-dark" onclick="applyPreset('dark')">
+          <div class="preset-swatch" style="background:#000"></div>ライブ黒
+        </button>
+        <button class="preset-btn" id="preset-white" onclick="applyPreset('white')">
+          <div class="preset-swatch" style="background:#fff"></div>明るい
+        </button>
+        <button class="preset-btn" id="preset-blue" onclick="applyPreset('blue')">
+          <div class="preset-swatch" style="background:#0a1628"></div>コンサート
+        </button>
+        <button class="preset-btn" id="preset-red" onclick="applyPreset('red')">
+          <div class="preset-swatch" style="background:#1a0505"></div>ロック
+        </button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="design-grid">
+        <div class="design-row"><span class="design-label">背景色</span><input type="color" id="bgColor" value="#000000" oninput="updatePreview()"></div>
+        <div class="design-row"><span class="design-label">デフォルト文字色（全員）</span><input type="color" id="textColor" value="#ffffff" oninput="updatePreview()"></div>
+        <div class="design-row"><span class="design-label">ブロック名の色</span><input type="color" id="accentColor" value="#f59e0b" oninput="updatePreview()"></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="design-grid">
+        <div class="design-row">
+          <span class="design-label">フォント</span>
+          <select id="fontFace" onchange="updatePreview()">
+            <option value="Meiryo">Meiryo</option>
+            <option value="Yu Gothic">Yu Gothic</option>
+            <option value="MS Gothic">MS Gothic</option>
+            <option value="MS Mincho">MS Mincho</option>
+            <option value="Arial">Arial</option>
+            <option value="Calibri">Calibri</option>
+          </select>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span class="design-label">歌詞のサイズ</span><span class="range-val" id="fontSizeVal">40pt</span>
+          </div>
+          <input type="range" id="fontSize" min="20" max="60" value="40"
+            oninput="document.getElementById('fontSizeVal').textContent=this.value+'pt';updatePreview()">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Next Lyrics Preview setting -->
+      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:10px;text-transform:uppercase">次の歌詞プレビュー</div>
+      <div class="parts-toggle-row" style="margin-bottom:0">
+        <label class="toggle-switch">
+          <input type="checkbox" id="nextPreviewEnabled" checked onchange="updatePreview()">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:13px;color:var(--muted)">スライド下部に次の歌詞を薄く表示</span>
+      </div>
+
+      <div id="nextPreviewSettings" style="display:none;margin-top:10px" class="next-preview-settings">
+        <div class="design-row">
+          <span class="design-label">表示行数</span>
+          <div class="count-select-row" style="flex:0 0 auto">
+            <button class="count-opt active" id="npl-1" onclick="setNextPreviewLines(1)">1行</button>
+            <button class="count-opt" id="npl-2" onclick="setNextPreviewLines(2)">2行</button>
+          </div>
+        </div>
+        <div class="design-row">
+          <span class="design-label">透明度（薄さ）</span>
+          <span class="range-val" id="nextOpacityVal">50%</span>
+        </div>
+        <input type="range" id="nextOpacity" min="10" max="100" value="50"
+          oninput="document.getElementById('nextOpacityVal').textContent=this.value+'%';updatePreview()">
+        <div class="design-row" style="margin-top:4px">
+          <span class="design-label" style="font-size:11px">ラベル「NEXT ▶」を表示</span>
+          <label class="toggle-switch" style="flex-shrink:0">
+            <input type="checkbox" id="nextLabelEnabled" checked onchange="updatePreview()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-top:14px"></div>
+
+      <!-- Repeat Count -->
+      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:10px;text-transform:uppercase">繰り返し回数の自動表記</div>
+      <div class="parts-toggle-row" style="margin-bottom:0">
+        <label class="toggle-switch">
+          <input type="checkbox" id="repeatCountEnabled" onchange="onRepeatToggle()">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:13px;color:var(--muted)" id="repeatToggleLabel">同じブロック名に回数を付けない</span>
+      </div>
+      <div id="repeatCountSettings" style="display:none;margin-top:10px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:7px">表示形式</div>
+        <div class="count-select-row" style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="count-opt active" id="rfmt-jp" onclick="setRepeatFmt('jp')" style="flex:1;min-width:60px">（N回目）</button>
+          <button class="count-opt" id="rfmt-bracket" onclick="setRepeatFmt('bracket')" style="flex:1;min-width:60px">[N]</button>
+          <button class="count-opt" id="rfmt-x" onclick="setRepeatFmt('x')" style="flex:1;min-width:60px">×N</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);line-height:1.6" id="repeatPreviewText"></div>
+      </div>
+
+      <div class="divider" style="margin-top:14px"></div>
+
+      <!-- Lyrics Repeat Counter (on-slide badge) -->
+      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:10px;text-transform:uppercase">歌詞繰り返しカウンター（スライド表示）</div>
+      <div class="parts-toggle-row" style="margin-bottom:0">
+        <label class="toggle-switch">
+          <input type="checkbox" id="lyricsRepeatEnabled" onchange="onLyricsRepeatToggle()">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:13px;color:var(--muted)" id="lyricsRepeatToggleLabel">同じ歌詞の繰り返しを検出して表示</span>
+      </div>
+      <div id="lyricsRepeatSettings" style="display:none;margin-top:10px">
+        <div class="hint-box" style="margin-bottom:10px">
+          歌詞の内容が同じスライドを自動検出し、スライド右上に目立つ回数バッジを表示します。コピペした繰り返し歌詞に自動で対応します。
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:7px">バッジの形式</div>
+        <div class="count-select-row" style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="count-opt active" id="lrfmt-kaime" onclick="setLyricsRepeatFmt('kaime')" style="flex:1;min-width:55px">N回目</button>
+          <button class="count-opt" id="lrfmt-frac" onclick="setLyricsRepeatFmt('frac')" style="flex:1;min-width:55px">N/合計</button>
+          <button class="count-opt" id="lrfmt-circle" onclick="setLyricsRepeatFmt('circle')" style="flex:1;min-width:55px">①②③</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);margin-bottom:5px">バッジの位置</div>
+        <div class="count-select-row" style="display:flex;gap:5px">
+          <button class="count-opt active" id="lrpos-tr" onclick="setLyricsRepeatPos('tr')" style="flex:1">右上</button>
+          <button class="count-opt" id="lrpos-br" onclick="setLyricsRepeatPos('br')" style="flex:1">右下</button>
+          <button class="count-opt" id="lrpos-tl" onclick="setLyricsRepeatPos('tl')" style="flex:1">左上</button>
+        </div>
+      </div>
+
+      <div class="divider" style="margin-top:14px"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:8px;text-transform:uppercase">スライドプレビュー</div>
+      <div class="preview-wrap">
+        <div class="slide-preview" id="slidePreview" style="background:#000">
+          <!-- ブロック名はプレビューにも表示しない -->
+          <div class="preview-lyrics" id="prevText"></div>
+          <div class="preview-next" id="prevNext" style="display:none"></div>
+          <div id="prevRepeatBadge" style="display:none;position:absolute;top:6px;right:8px;
+            background:#f59e0b;color:#000;font-weight:800;font-size:9px;
+            padding:2px 7px;border-radius:4px;letter-spacing:.3px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div class="card">
+      <div class="card-title"><div class="step-dot" id="stepDownload">5</div><h2>ダウンロード</h2></div>
+      <button class="btn btn-green" onclick="generatePPTX()" id="downloadBtn">
+        <span>⬇</span> この曲を生成
+      </button>
+      <button class="btn-all-dl" onclick="downloadAllSongs()" id="downloadAllBtn">
+        <span>📦</span> 全曲まとめてダウンロード
+        <span class="songs-count-badge" id="songsCountBadge">1曲</span>
+      </button>
+      <div class="status" id="downloadStatus"></div>
+
+      <!-- AD SLOT: Sidebar Rectangle (300×250) -->
+      <div id="ad-sidebar" style="margin-top:16px;background:rgba(255,255,255,.03);border:1px dashed #2e2e5a;border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80px;gap:4px">
+        <span style="font-size:9px;color:#5a5a88;letter-spacing:.8px;text-transform:uppercase">Advertisement</span>
+        <div style="width:100%;max-width:300px;height:50px;background:rgba(255,255,255,.03);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#2e2e5a">
+          広告スペース（300×250 推奨）
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// 自己完結型 PPTX ジェネレーター（外部ライブラリ不要）
+// ═══════════════════════════════════════════════
+
+const SLIDE_W = 9144000; // 10インチ（EMU）
+const SLIDE_H = 5143500; // 5.625インチ（EMU）
+function inch(n) { return Math.round(n * 914400); }
+
+// ── CRC32 ──────────────────────────────────────
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c;
+  }
+  return t;
+})();
+function crc32(data) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) c = CRC_TABLE[(c ^ data[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ── ZIP（無圧縮ストアモード）───────────────────
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], cds = [];
+  let offset = 0;
+  for (const [name, content] of files) {
+    const nb = enc.encode(name);
+    const db = typeof content === 'string' ? enc.encode(content) : content;
+    const crc = crc32(db);
+    const lh = new Uint8Array(30 + nb.length);
+    const lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true);
+    lv.setUint16(6, 0, true); lv.setUint16(8, 0, true);
+    lv.setUint16(10, 0, true); lv.setUint16(12, 0, true);
+    lv.setUint32(14, crc, true); lv.setUint32(18, db.length, true);
+    lv.setUint32(22, db.length, true); lv.setUint16(26, nb.length, true);
+    lv.setUint16(28, 0, true); lh.set(nb, 30);
+    const cd = new Uint8Array(46 + nb.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true); cv.setUint16(10, 0, true); cv.setUint16(12, 0, true);
+    cv.setUint16(14, 0, true); cv.setUint32(16, crc, true); cv.setUint32(20, db.length, true);
+    cv.setUint32(24, db.length, true); cv.setUint16(28, nb.length, true);
+    cv.setUint16(30, 0, true); cv.setUint16(32, 0, true); cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true); cv.setUint32(38, 0, true); cv.setUint32(42, offset, true);
+    cd.set(nb, 46);
+    parts.push(lh, db); cds.push(cd);
+    offset += lh.length + db.length;
+  }
+  const cdData = u8concat(cds);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdData.length, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+  return u8concat([...parts, cdData, eocd]);
+}
+function u8concat(arrays) {
+  const out = new Uint8Array(arrays.reduce((s, a) => s + a.length, 0));
+  let off = 0;
+  for (const a of arrays) { out.set(a, off); off += a.length; }
+  return out;
+}
+
+// ── PPTX XML ───────────────────────────────────
+function xesc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// テキストボックス（段落＝行単位、行ごとに色指定可能）
+function makeBox(id, x, y, w, h, lines, opts = {}) {
+  // lines = [{text, color, bold, italic, sz}]
+  const font    = xesc(opts.font || 'Meiryo');
+  const defSz   = Math.round((opts.sz || 36) * 100);
+  const align   = opts.align || 'ctr';
+  const valign  = opts.valign || 'ctr';
+  const paras   = lines.map(l => {
+    const sz = Math.round((l.sz || opts.sz || 36) * 100);
+    const col  = (l.color || opts.color || 'FFFFFF').replace('#','');
+    const bold = l.bold !== undefined ? (l.bold ? '1' : '0') : (opts.bold ? '1' : '0');
+    const ital = l.italic ? '1' : '0';
+    const la = l.align || align;
+    return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="140000"/></a:lnSpc></a:pPr>` +
+      `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}" dirty="0">` +
+      `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
+      `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
+      `<a:t>${xesc(l.text)}</a:t></a:r></a:p>`;
+  }).join('');
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="t${id}"/><p:cNvSpPr txBox="1"><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>` +
+    `<p:txBody><a:bodyPr wrap="square" anchor="${valign}"><a:normAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`;
+}
+
+// 塗りつぶし矩形（角丸）
+function makeRect(id, x, y, w, h, fill, line) {
+  const fxml = fill ? `<a:solidFill><a:srgbClr val="${fill.replace('#','')}"/></a:solidFill>` : '<a:noFill/>';
+  const lxml = line ? `<a:ln><a:solidFill><a:srgbClr val="${line.replace('#','')}"/></a:solidFill></a:ln>` : '<a:ln><a:noFill/></a:ln>';
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="r${id}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
+    `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 20000"/></a:avLst></a:prstGeom>${fxml}${lxml}</p:spPr>` +
+    `<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`;
+}
+
+function buildSlideXml(bgColor, shapes) {
+  const bg = bgColor
+    ? `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bgColor.replace('#','')}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`
+    : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<p:cSld>${bg}<p:spTree>
+<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${SLIDE_W}" cy="${SLIDE_H}"/><a:chOff x="0" y="0"/><a:chExt cx="${SLIDE_W}" cy="${SLIDE_H}"/></a:xfrm></p:grpSpPr>
+${shapes.join('\n')}
+</p:spTree></p:cSld>
+</p:sld>`;
+}
+
+// ── GENERATE ────────────────────────────────────
+// デザイン設定を読み取る
+function readDesign() {
+  return {
+    bgHex:      document.getElementById('bgColor').value.replace('#',''),
+    txHex:      document.getElementById('textColor').value.replace('#',''),
+    acHex:      document.getElementById('accentColor').value.replace('#',''),
+    font:       document.getElementById('fontFace').value,
+    fs:         parseInt(document.getElementById('fontSize').value),
+    nextOn:     document.getElementById('nextPreviewEnabled').checked,
+    nextOp:     parseInt(document.getElementById('nextOpacity').value) / 100,
+    nextLbl:    document.getElementById('nextLabelEnabled').checked,
+  };
+}
+
+// 曲データ + デザインから pptx の Uint8Array を生成
+function buildPptxBytes(songData, design) {
+  const { title, artist, units, lri } = songData;
+  const { bgHex, txHex, acHex, font, fs, nextOn, nextOp, nextLbl } = design;
+  const nextClrHex = blendHex('#'+bgHex, '#'+txHex, nextOp).replace('#','');
+  const slideXmls = [];
+
+  // タイトルスライド
+  {
+    let id = 2; const sh = [];
+    const titleSz = Math.min(48, Math.max(24, 48 - title.length * 0.8));
+    sh.push(makeRect(id++, inch(0.45), inch(1.6), inch(0.06), inch(2.4), acHex, acHex));
+    sh.push(makeBox(id++, inch(0.7), inch(1.7), inch(8.6), inch(1.6),
+      [{text: title, color: txHex, bold: true, sz: titleSz}], {font, align:'l', valign:'ctr'}));
+    if (artist) sh.push(makeBox(id++, inch(0.7), inch(3.4), inch(8.6), inch(0.6),
+      [{text: artist, color: acHex, sz: 16}], {font, align:'l', valign:'t'}));
+    slideXmls.push(buildSlideXml(bgHex, sh));
+  }
+
+  // パート凡例スライド
+  const hasLegend = partsEnabled && parts.length > 0;
+  if (hasLegend) {
+    let id = 2; const sh = [];
+    sh.push(makeBox(id++, inch(0.35), inch(0.3), inch(9), inch(0.6),
+      [{text:'パート凡例', color: acHex, bold:true, sz:18}], {font, align:'l'}));
+    [{label:'全員（デフォルト）', color: txHex}, ...parts.map(p=>({label:p.name, color:p.color.replace('#','')}))].forEach((row, i) => {
+      const yy = 0.85 + i * 0.72;
+      const c  = row.color.replace('#','');
+      sh.push(makeRect(id++, inch(0.55), inch(yy+0.02), inch(0.3), inch(0.3), c, c));
+      sh.push(makeBox(id++, inch(1.05), inch(yy), inch(8), inch(0.4),
+        [{text: row.label, color: c, bold:true, sz:20}], {font, align:'l', valign:'ctr'}));
+    });
+    slideXmls.push(buildSlideXml(bgHex, sh));
+  }
+
+  // 歌詞スライド
+  for (let ui = 0; ui < units.length; ui++) {
+    const unit = units[ui];
+    const nextUnit = units[ui+1] || null;
+    let id = 2; const sh = [];
+
+    // 繰り返しバッジ
+    if (lyricsRepeatEnabled && unit.lri) {
+      const { idx, total } = unit.lri;
+      const bText = formatLyricsRepeatBadge(idx, total);
+      const bW = lyricsRepeatFmt === 'circle' ? 0.55 : lyricsRepeatFmt === 'frac' ? 0.75 : 1.0;
+      const bH = 0.42, mg = 0.22;
+      let bx, by;
+      if      (lyricsRepeatPos === 'tr') { bx = 10 - bW - mg; by = 0.18; }
+      else if (lyricsRepeatPos === 'br') { bx = 10 - bW - mg; by = 5.625 - bH - mg; }
+      else                               { bx = mg;            by = 0.18; }
+      const bSz = lyricsRepeatFmt === 'circle' ? Math.min(28, fs*0.75) : Math.min(22, fs*0.55);
+      sh.push(makeRect(id++, inch(bx), inch(by), inch(bW), inch(bH), acHex, acHex));
+      sh.push(makeBox(id++, inch(bx), inch(by), inch(bW), inch(bH),
+        [{text: bText, color:'000000', bold:true, sz: bSz}], {font, align:'ctr', valign:'ctr'}));
+    }
+
+    // 歌詞
+    const validLines = unit.lines.filter(l => l.text.trim());
+    if (validLines.length) {
+      const mainH = nextOn && nextUnit ? 4.85 : 5.1;
+      // スライドごとに最適フォントサイズを自動計算（設定値を上限）
+      const optFs = calcOptimalFontSize(validLines, fs);
+      const lyricLines = validLines.map(line => {
+        let col = txHex;
+        if (partsEnabled && line.part !== null && parts[line.part])
+          col = parts[line.part].color.replace('#','');
+        return {text: line.text, color: col, sz: optFs};
+      });
+      sh.push(makeBox(id++, inch(0.4), inch(0.25), inch(9.2), inch(mainH),
+        lyricLines, {font, align:'ctr', valign:'ctr'}));
+    }
+
+    // 次の歌詞プレビュー
+    if (nextOn && nextUnit) {
+      const nLines = nextUnit.lines.filter(l=>l.text.trim()).slice(0, nextPreviewLines);
+      if (nLines.length) {
+        const prefix = nextLbl ? 'NEXT ▶  ' : '';
+        const nText  = prefix + nLines.map(l=>l.text).join('　');
+        sh.push(makeRect(id++, inch(0.5), inch(4.88), inch(9), inch(0.012), nextClrHex, nextClrHex));
+        sh.push(makeBox(id++, inch(0.4), inch(4.95), inch(9.2), inch(0.55),
+          [{text: nText, color: nextClrHex, italic:true, sz: Math.max(10, Math.round(fs*0.38))}],
+          {font, align:'ctr', valign:'ctr'}));
+      }
+    }
+    slideXmls.push(buildSlideXml(bgHex, sh));
+  }
+
+  // PPTX ファイル一覧
+  const n = slideXmls.length;
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml"  ContentType="application/xml"/>
+<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
+<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
+${slideXmls.map((_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('\n')}
+</Types>`;
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>`;
+  const presXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
+<p:sldIdLst>${slideXmls.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+2}"/>`).join('')}</p:sldIdLst>
+<p:sldSz cx="${SLIDE_W}" cy="${SLIDE_H}" type="screen16x9"/>
+<p:notesSz cx="6858000" cy="9144000"/>
+</p:presentation>`;
+  const presRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+${slideXmls.map((_,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`).join('\n')}
+</Relationships>`;
+  const masterXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${SLIDE_W}" cy="${SLIDE_H}"/><a:chOff x="0" y="0"/><a:chExt cx="${SLIDE_W}" cy="${SLIDE_H}"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
+<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
+<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
+</p:sldMaster>`;
+  const masterRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`;
+  const layoutXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" type="blank" preserve="1">
+<p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${SLIDE_W}" cy="${SLIDE_H}"/><a:chOff x="0" y="0"/><a:chExt cx="${SLIDE_W}" cy="${SLIDE_H}"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
+<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
+</p:sldLayout>`;
+  const layoutRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+</Relationships>`;
+  const slideRel = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`;
+
+  const files = [
+    ['[Content_Types].xml', contentTypes],
+    ['_rels/.rels', rootRels],
+    ['ppt/presentation.xml', presXml],
+    ['ppt/_rels/presentation.xml.rels', presRels],
+    ['ppt/slideMasters/slideMaster1.xml', masterXml],
+    ['ppt/slideMasters/_rels/slideMaster1.xml.rels', masterRels],
+    ['ppt/slideLayouts/slideLayout1.xml', layoutXml],
+    ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', layoutRels],
+    ...slideXmls.map((xml, i) => [`ppt/slides/slide${i+1}.xml`, xml]),
+    ...slideXmls.map((_, i) => [`ppt/slides/_rels/slide${i+1}.xml.rels`, slideRel()]),
+  ];
+  return makeZip(files);
+}
+
+// 曲データをユニットに展開（generatePPTX・downloadAll共通）
+function songToUnits(songBlocks) {
+  const savedBlocks = blocks;
+  blocks = songBlocks;
+  const units = expandToSlideUnits();
+  blocks = savedBlocks;
+  return units;
+}
+
+// ═══════════════════════════════════════════════
+// インタースティシャル広告モーダル
+// ═══════════════════════════════════════════════
+let _pendingDownload = null; // 実行待ちのダウンロード関数
+let _cdTimer = null;
+
+function showDownloadModal(downloadFn, label) {
+  _pendingDownload = downloadFn;
+  document.getElementById('modalDlLabel').textContent = label || 'ダウンロード';
+
+  // ボタンを無効状態にリセット
+  const btn = document.getElementById('modalDlBtn');
+  btn.classList.remove('ready');
+
+  // カウントダウン
+  const SECONDS = 5;
+  let remaining = SECONDS;
+  const numEl = document.getElementById('cdNum');
+  const progEl = document.getElementById('cdProgress');
+  const circumference = 113; // 2π×18
+  numEl.textContent = remaining;
+  progEl.style.strokeDashoffset = circumference;
+
+  clearInterval(_cdTimer);
+  _cdTimer = setInterval(() => {
+    remaining--;
+    numEl.textContent = remaining;
+    progEl.style.strokeDashoffset = circumference * (remaining / SECONDS);
+    if (remaining <= 0) {
+      clearInterval(_cdTimer);
+      btn.classList.add('ready');
+      numEl.textContent = '✓';
+      progEl.style.stroke = '#10b981';
+    }
+  }, 1000);
+
+  document.getElementById('dlModal').classList.add('show');
+}
+
+function execDownload() {
+  if (!_pendingDownload) return;
+  document.getElementById('dlModal').classList.remove('show');
+  clearInterval(_cdTimer);
+  _pendingDownload();
+  _pendingDownload = null;
+}
+
+// モーダル外クリックで閉じる（カウント中でも閉じられるが dl は実行しない）
+document.getElementById('dlModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.classList.remove('show');
+    clearInterval(_cdTimer);
+    _pendingDownload = null;
+  }
+});
+
+// この曲を生成してダウンロード
+async function generatePPTX() {
+  saveSong();
+  const s = songs[currentSongIdx];
+  const units = songToUnits(s.blocks);
+  if (!units.length) { setStatus('downloadStatus','⚠️ 内容のあるブロックがありません','err'); return; }
+
+  const design = readDesign();
+  const title  = s.title || '無題';
+
+  showDownloadModal(() => {
+    try {
+      const bytes = buildPptxBytes({ title, artist: s.artist, units }, design);
+      triggerDownload(bytes, `${title}.pptx`);
+      setStatus('downloadStatus', `✅ "${title}.pptx" をダウンロードしました（${units.length+1}枚）`, 'ok');
+    } catch(e) {
+      setStatus('downloadStatus','❌ 生成に失敗しました: '+e.message,'err');
+    }
+  }, `${title}.pptx をダウンロード`);
+}
+
+// 全曲まとめてダウンロード
+async function downloadAllSongs() {
+  saveSong();
+  const validSongs = songs.filter(s => s.blocks && s.blocks.some(b => b.lines.some(l => l.text.trim())));
+  if (!validSongs.length) { setStatus('downloadStatus','⚠️ 内容のある曲がありません','err'); return; }
+
+  const design = readDesign();
+
+  showDownloadModal(() => {
+    try {
+      if (validSongs.length === 1) {
+        const s = validSongs[0];
+        const units = songToUnits(s.blocks);
+        const bytes = buildPptxBytes({ title: s.title||'無題', artist: s.artist, units }, design);
+        triggerDownload(bytes, `${s.title||'無題'}.pptx`);
+        setStatus('downloadStatus','✅ ダウンロードしました','ok');
+      } else {
+        const usedNames = {};
+        const zipFiles = [];
+        for (const s of validSongs) {
+          const units = songToUnits(s.blocks);
+          if (!units.length) continue;
+          const bytes = buildPptxBytes({ title: s.title||'無題', artist: s.artist, units }, design);
+          let fname = (s.title || '無題').replace(/[\/\\:*?"<>|]/g,'_') + '.pptx';
+          if (usedNames[fname]) { usedNames[fname]++; fname = fname.replace('.pptx', `_${usedNames[fname]}.pptx`); }
+          else usedNames[fname] = 1;
+          zipFiles.push([fname, bytes]);
+        }
+        const outerZip = makeZip(zipFiles);
+        triggerDownload(outerZip, '歌詞スライドまとめ.zip');
+        setStatus('downloadStatus', `✅ ${zipFiles.length}曲をZIPでダウンロードしました`, 'ok');
+      }
+    } catch(e) {
+      setStatus('downloadStatus','❌ 生成に失敗しました: '+e.message,'err');
+    }
+  }, `全${validSongs.length}曲をダウンロード`);
+}
+
+function triggerDownload(bytes, filename) {
+  const blob = new Blob([bytes], {type:'application/octet-stream'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+// block = { label, lines: [{text, part}], splitSlides: 1|2|3 }
+let blocks = [];
+let parts = [
+  { name: 'パートA', color: '#60a5fa' },
+  { name: 'パートB', color: '#f87171' },
+];
+let partsEnabled = false;
+let nextPreviewLines = 1;
+const PART_PALETTE = ['#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24'];
+
+let lyricsRepeatEnabled = false;
+let lyricsRepeatFmt = 'kaime';
+let lyricsRepeatPos = 'tr';
+
+const CIRCLE_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+
+// ═══════════════════════════════════════════════
+// オーバーフロー検出
+// ═══════════════════════════════════════════════
+// スライド寸法(インチ): 10 × 5.625、マージン 0.4インチ
+// 1pt ≈ 1.333px @ 96dpi。日本語文字幅 ≈ 1em
+// 利用可能幅: (10 - 0.8) × 96 = 883px
+// 1行の高さ ≈ fontSize(pt) × 1.333 × 1.55(行間)
+function checkBlockOverflow(block, _unused, fontSizePt) {
+  const pts = new Set(block.splitPoints || []);
+  const slideW_px = (10 - 0.8) * 96;
+  const slideH_px = (5.625 - 0.4) * 96;
+  const charW_px  = fontSizePt * 1.333;
+  const lineH_px  = fontSizePt * 1.333 * 1.55;
+  const maxCharsPerLine = Math.floor(slideW_px / charW_px);
+  const maxLines        = Math.floor(slideH_px / lineH_px);
+
+  // splitPointsでチャンク分割
+  const chunks = [];
+  let chunk    = [];
+  block.lines.forEach((line, li) => {
+    if (line.text.trim()) chunk.push(line);
+    if (pts.has(li) && li < block.lines.length - 1) {
+      chunks.push(chunk); chunk = [];
+    }
+  });
+  chunks.push(chunk);
+
+  for (const c of chunks.filter(c => c.length)) {
+    let totalRenderLines = 0;
+    for (const l of c) {
+      const len = [...l.text].length;
+      totalRenderLines += Math.ceil(len / maxCharsPerLine) || 1;
+    }
+    if (totalRenderLines > maxLines) return true;
+  }
+  return false;
+}
+
+// 指定ブロックに最適なフォントサイズ(pt)を計算
+function calcOptimalFontSize(lines, maxPt = 60, minPt = 14) {
+  if (!lines.length) return maxPt;
+  const slideW_px = (10 - 0.8) * 96;
+  const slideH_px = (5.625 - 0.4) * 96;
+  for (let pt = maxPt; pt >= minPt; pt -= 2) {
+    const charW = pt * 1.333;
+    const lineH = pt * 1.333 * 1.55;
+    const maxChars = Math.floor(slideW_px / charW);
+    const maxLines = Math.floor(slideH_px / lineH);
+    let total = 0;
+    for (const l of lines) {
+      const len = [...l.text].length;
+      total += Math.ceil(len / maxChars) || 1;
+    }
+    if (total <= maxLines) return pt;
+  }
+  return minPt;
+}
+
+// ═══════════════════════════════════════════════
+// フルスクリーン スライドプレビューモーダル
+// ═══════════════════════════════════════════════
+let _previewSlides  = []; // {bg, text, lines:[{t,color}], nextText, nextColor, badge, badgeColor}
+let _previewCurrent = 0;
+
+function openSlideModal() {
+  syncAll();
+  saveSong();
+  const s     = songs[currentSongIdx];
+  const units = songToUnits(s.blocks);
+  if (!units.length) { alert('表示できるスライドがありません。歌詞を入力して自動解析してください。'); return; }
+
+  const bgHex      = document.getElementById('bgColor').value;
+  const txHex      = document.getElementById('textColor').value;
+  const acHex      = document.getElementById('accentColor').value;
+  const font       = document.getElementById('fontFace').value;
+  const fsBase     = parseInt(document.getElementById('fontSize').value);
+  const nextOn     = document.getElementById('nextPreviewEnabled').checked;
+  const nextOp     = parseInt(document.getElementById('nextOpacity').value) / 100;
+  const nextLbl    = document.getElementById('nextLabelEnabled').checked;
+  const nextClr    = blendHex(bgHex, txHex, nextOp);
+
+  // タイトルスライド
+  const title  = s.title || '無題';
+  const artist = s.artist || '';
+  _previewSlides = [{
+    bg: bgHex, font,
+    lines: [{ t: title, color: txHex, bold: true, sz: Math.min(60, Math.max(28, 60 - title.length)) }],
+    sub: artist ? { t: artist, color: acHex } : null,
+    isTitle: true, nextText: null,
+  }];
+
+  // 歌詞スライド
+  units.forEach((unit, ui) => {
+    const nextUnit = units[ui + 1] || null;
+    const validLines = unit.lines.filter(l => l.text.trim());
+    if (!validLines.length) return;
+
+    // このスライドに最適なフォントサイズを計算
+    const optFs = calcOptimalFontSize(validLines, fsBase);
+
+    const lines = validLines.map(line => {
+      let col = txHex;
+      if (partsEnabled && line.part !== null && parts[line.part]) col = parts[line.part].color;
+      return { t: line.text, color: col, sz: optFs };
+    });
+
+    let nextText = null;
+    if (nextOn && nextUnit) {
+      const nLines = nextUnit.lines.filter(l=>l.text.trim()).slice(0, nextPreviewLines);
+      if (nLines.length) {
+        nextText = (nextLbl ? 'NEXT ▶  ' : '') + nLines.map(l=>l.text).join('　');
+      }
+    }
+    let badge = null, badgeColor = acHex;
+    if (lyricsRepeatEnabled && unit.lri) {
+      badge = formatLyricsRepeatBadge(unit.lri.idx, unit.lri.total);
+    }
+    _previewSlides.push({ bg: bgHex, font, lines, nextText, nextColor: nextClr, badge, badgeColor, isTitle: false });
+  });
+
+  _previewCurrent = 0;
+  document.getElementById('modalSongTitle').textContent = title;
+  renderPreviewSlide(_previewCurrent);
+  renderSlideThumbs();
+  document.getElementById('slidePreviewModal').classList.add('show');
+}
+
+function closeSlideModal() {
+  document.getElementById('slidePreviewModal').classList.remove('show');
+}
+
+function navigateSlide(dir) {
+  const n = _previewSlides.length;
+  _previewCurrent = (_previewCurrent + dir + n) % n;
+  renderPreviewSlide(_previewCurrent);
+  // サムネイルのアクティブ更新
+  document.querySelectorAll('.slide-thumb').forEach((el, i) => el.classList.toggle('active', i === _previewCurrent));
+  document.querySelector(`.slide-thumb:nth-child(${_previewCurrent + 1})`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+function renderPreviewSlide(idx) {
+  const s    = _previewSlides[idx];
+  const n    = _previewSlides.length;
+  const frame = document.getElementById('slideFrame');
+
+  frame.style.background   = s.bg;
+  frame.style.fontFamily   = s.font + ',Noto Sans JP,sans-serif';
+
+  if (s.isTitle) {
+    const line = s.lines[0];
+    frame.innerHTML = `
+      <div style="position:absolute;left:7%;top:50%;transform:translateY(-50%);
+        width:1%;height:42%;background:${s.lines[0].color === '#ffffff' || !s.lines[0] ? document.getElementById('accentColor').value : s.lines[0].color};opacity:.6"></div>
+      <div style="text-align:left;padding-left:9%;width:100%">
+        <div style="font-size:clamp(24px,4.5vw,64px);font-weight:900;color:${line.color};line-height:1.1">${esc(line.t)}</div>
+        ${s.sub ? `<div style="font-size:clamp(12px,1.5vw,22px);color:${s.sub.color};margin-top:10px">${esc(s.sub.t)}</div>` : ''}
+      </div>`;
+  } else {
+    // 自動フォントサイズ → pxに変換（プレビュー幅1000px基準、実際は10インチ=約960px実効）
+    const maxSz = s.lines[0]?.sz || 40;
+    const pxSize = Math.max(10, maxSz * 1.2); // preview scale ≈ 1.2x
+    const lyricsHtml = s.lines.map(l =>
+      `<div style="color:${l.color};font-size:${pxSize}px;font-weight:700;line-height:1.5;word-break:break-all">${esc(l.t)}</div>`
+    ).join('');
+    const nextHtml = s.nextText
+      ? `<div class="slide-frame-next" style="color:${s.nextColor};font-size:${Math.max(9,Math.round(pxSize*0.38))}px">${esc(s.nextText)}</div>`
+      : '';
+    const badgeHtml = s.badge
+      ? `<div class="slide-frame-badge" style="background:${s.badgeColor};color:#000;font-size:${Math.max(10,Math.round(pxSize*0.35))}px;top:3%;right:3%">${esc(s.badge)}</div>`
+      : '';
+    frame.innerHTML = `
+      <div class="slide-frame-lyrics">${lyricsHtml}</div>
+      ${nextHtml}${badgeHtml}`;
+  }
+
+  // カウンター更新
+  document.getElementById('slideNavCur').textContent   = idx + 1;
+  document.getElementById('slideNavTotal').textContent  = n;
+  document.getElementById('modalSlideInfo').textContent = `${idx + 1} / ${n}`;
+  document.getElementById('prevSlideBtn').disabled = idx === 0;
+  document.getElementById('nextSlideBtn').disabled = idx === n - 1;
+}
+
+function renderSlideThumbs() {
+  const thumbs = document.getElementById('slideThumbs');
+  thumbs.innerHTML = _previewSlides.map((s, i) => {
+    const label = s.isTitle ? '♪ ' + (s.lines[0]?.t.slice(0,12) || '---') : s.lines.map(l=>l.t).join(' ').slice(0,22);
+    return `<div class="slide-thumb ${i===0?'active':''}" onclick="navigateSlide(${i - _previewCurrent})"
+      style="background:${s.bg};color:${s.lines[0]?.color||'#fff'}">
+      ${esc(label)}
+    </div>`;
+  }).join('');
+}
+
+// キーボードナビゲーション
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('slidePreviewModal').classList.contains('show')) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigateSlide(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigateSlide(-1);
+  if (e.key === 'Escape') closeSlideModal();
+});
+// ═══════════════════════════════════════════════
+// songs[i] = { title, artist, lyricsRaw, blocks }
+let songs = [{ title: '', artist: '', lyricsRaw: '', blocks: [] }];
+let currentSongIdx = 0;
+let nextSongId = 1;
+
+function saveSong() {
+  syncAll();
+  songs[currentSongIdx] = {
+    title:      document.getElementById('songTitle').value,
+    artist:     document.getElementById('artistName').value,
+    lyricsRaw:  document.getElementById('lyricsInput').value,
+    blocks:     JSON.parse(JSON.stringify(blocks)),
+  };
+}
+
+function loadSong(idx) {
+  const s = songs[idx];
+  document.getElementById('songTitle').value   = s.title   || '';
+  document.getElementById('artistName').value  = s.artist  || '';
+  document.getElementById('lyricsInput').value = s.lyricsRaw || '';
+  blocks = JSON.parse(JSON.stringify(s.blocks || []));
+  renderBlocks();
+  updateSlideCount();
+  setStatus('parseStatus', '');
+  setStatus('downloadStatus', '');
+}
+
+function renderSongTabs() {
+  const bar = document.getElementById('songTabBar');
+  bar.innerHTML = songs.map((s, i) => {
+    const name = s.title || `曲 ${i + 1}`;
+    const active = i === currentSongIdx ? 'active' : '';
+    const del = songs.length > 1
+      ? `<button class="song-tab-del" onclick="deleteSong(event,${i})" title="削除">✕</button>`
+      : '';
+    return `<button class="song-tab ${active}" onclick="switchSong(${i})">
+      <span class="song-tab-name" title="${esc(name)}">${esc(name)}</span>${del}
+    </button>`;
+  }).join('') +
+  `<button class="song-tab-add" onclick="addSong()">＋ 曲を追加</button>`;
+
+  // バッジ更新
+  const badge = document.getElementById('songsCountBadge');
+  if (badge) badge.textContent = `${songs.length}曲`;
+}
+
+function switchSong(idx) {
+  if (idx === currentSongIdx) return;
+  saveSong();
+  currentSongIdx = idx;
+  loadSong(idx);
+  renderSongTabs();
+}
+
+function addSong() {
+  saveSong();
+  songs.push({ title: '', artist: '', lyricsRaw: '', blocks: [] });
+  currentSongIdx = songs.length - 1;
+  blocks = [];
+  document.getElementById('songTitle').value   = '';
+  document.getElementById('artistName').value  = '';
+  document.getElementById('lyricsInput').value = '';
+  renderBlocks();
+  updateSlideCount();
+  setStatus('parseStatus', '');
+  setStatus('downloadStatus', '');
+  renderSongTabs();
+  // 曲名入力にフォーカス
+  setTimeout(() => document.getElementById('songTitle').focus(), 50);
+}
+
+function deleteSong(e, idx) {
+  e.stopPropagation();
+  if (songs.length <= 1) return;
+  if (!confirm(`「${songs[idx].title || '曲 '+(idx+1)}」を削除しますか？`)) return;
+  songs.splice(idx, 1);
+  if (currentSongIdx >= songs.length) currentSongIdx = songs.length - 1;
+  loadSong(currentSongIdx);
+  renderSongTabs();
+}
+
+// 曲名が変わったらタブをリアルタイム更新
+document.getElementById('songTitle').addEventListener('input', () => {
+  songs[currentSongIdx].title = document.getElementById('songTitle').value;
+  renderSongTabs();
+});
+
+// ═══════════════════════════════════════════════
+// LYRICS REPEAT COUNTER
+// ═══════════════════════════════════════════════
+function onLyricsRepeatToggle() {
+  lyricsRepeatEnabled = document.getElementById('lyricsRepeatEnabled').checked;
+  document.getElementById('lyricsRepeatSettings').style.display = lyricsRepeatEnabled ? 'block' : 'none';
+  document.getElementById('lyricsRepeatToggleLabel').textContent =
+    lyricsRepeatEnabled ? '同じ歌詞の繰り返しを自動検出・表示する' : '同じ歌詞の繰り返しを検出して表示';
+  renderBlocks();
+  updatePreview();
+}
+
+function setLyricsRepeatFmt(fmt) {
+  lyricsRepeatFmt = fmt;
+  ['kaime','frac','circle'].forEach(f =>
+    document.getElementById('lrfmt-'+f).classList.toggle('active', f === fmt)
+  );
+  renderBlocks();
+  updatePreview();
+}
+
+function setLyricsRepeatPos(pos) {
+  lyricsRepeatPos = pos;
+  ['tr','br','tl'].forEach(p =>
+    document.getElementById('lrpos-'+p).classList.toggle('active', p === pos)
+  );
+  updatePreview();
+}
+
+// Generate a normalized fingerprint for a block's lyric content
+function lyricsFingerprint(b) {
+  return b.lines.map(l => l.text.trim()).filter(Boolean).join('\n').toLowerCase();
+}
+
+// Returns map: fingerprint → [{blockIdx, occurrenceIdx, totalOccurrences}]
+function computeLyricsRepeatInfo() {
+  const fmap = {}; // fingerprint → [blockIdx,...]
+  blocks.forEach((b, bi) => {
+    if (!b.lines.some(l => l.text.trim())) return;
+    const fp = lyricsFingerprint(b);
+    if (!fp) return;
+    if (!fmap[fp]) fmap[fp] = [];
+    fmap[fp].push(bi);
+  });
+  // Build per-block info: {repeatIdx (1-based), repeatTotal}
+  const info = {}; // bi → {idx, total}
+  Object.values(fmap).forEach(idxList => {
+    if (idxList.length <= 1) return; // no repeat
+    idxList.forEach((bi, occurrence) => {
+      info[bi] = { idx: occurrence + 1, total: idxList.length };
+    });
+  });
+  return info;
+}
+
+function formatLyricsRepeatBadge(idx, total) {
+  if (lyricsRepeatFmt === 'kaime')  return `${idx}回目`;
+  if (lyricsRepeatFmt === 'frac')   return `${idx}/${total}`;
+  if (lyricsRepeatFmt === 'circle') return CIRCLE_NUMS[Math.min(idx-1, CIRCLE_NUMS.length-1)];
+  return `${idx}回目`;
+}
+let repeatFmt = 'jp';
+
+// ═══════════════════════════════════════════════
+// REPEAT COUNT
+// ═══════════════════════════════════════════════
+function onRepeatToggle() {
+  repeatCountEnabled = document.getElementById('repeatCountEnabled').checked;
+  document.getElementById('repeatCountSettings').style.display = repeatCountEnabled ? 'block' : 'none';
+  document.getElementById('repeatToggleLabel').textContent =
+    repeatCountEnabled ? '同じブロック名に回数を自動付与' : '同じブロック名に回数を付けない';
+  renderBlocks();
+  updateRepeatPreview();
+}
+
+function setRepeatFmt(fmt) {
+  repeatFmt = fmt;
+  ['jp','bracket','x'].forEach(f =>
+    document.getElementById('rfmt-'+f).classList.toggle('active', f === fmt)
+  );
+  renderBlocks();
+  updateRepeatPreview();
+}
+
+function formatRepeatLabel(base, n) {
+  if (repeatFmt === 'jp')      return `${base}（${n}回目）`;
+  if (repeatFmt === 'bracket') return `${base} [${n}]`;
+  if (repeatFmt === 'x')       return `${base} ×${n}`;
+  return base;
+}
+
+// Returns array[bi] = final display label for each block index
+function computeRepeatMap() {
+  if (!repeatCountEnabled) return blocks.map(b => b.label);
+  const totalCount = {};
+  blocks.forEach(b => {
+    if (b.lines.some(l => l.text.trim()))
+      totalCount[b.label] = (totalCount[b.label] || 0) + 1;
+  });
+  const seenCount = {};
+  return blocks.map(b => {
+    if (!b.lines.some(l => l.text.trim())) return b.label;
+    const total = totalCount[b.label] || 1;
+    if (total <= 1) return b.label;
+    seenCount[b.label] = (seenCount[b.label] || 0) + 1;
+    return formatRepeatLabel(b.label, seenCount[b.label]);
+  });
+}
+
+function updateRepeatPreview() {
+  const el = document.getElementById('repeatPreviewText');
+  if (!el) return;
+  const ex = ['サビ','Aメロ','サビ','Bメロ','サビ'];
+  const tot = {}; ex.forEach(l => tot[l] = (tot[l]||0)+1);
+  const seen = {};
+  const fmt = ex.map(l => {
+    if (tot[l] <= 1) return l;
+    seen[l] = (seen[l]||0)+1;
+    return formatRepeatLabel(l, seen[l]);
+  });
+  el.innerHTML = fmt.map((f,i) =>
+    `<span style="color:var(--amber);font-weight:700">${esc(f)}</span>${i<fmt.length-1?' → ':''}`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// NEXT PREVIEW TOGGLE
+// ═══════════════════════════════════════════════
+document.getElementById('nextPreviewEnabled').addEventListener('change', function() {
+  document.getElementById('nextPreviewSettings').style.display = this.checked ? 'block' : 'none';
+  updatePreview();
+});
+// デフォルトON
+document.getElementById('nextPreviewSettings').style.display = 'block';
+
+function setNextPreviewLines(n) {
+  nextPreviewLines = n;
+  document.getElementById('npl-1').classList.toggle('active', n === 1);
+  document.getElementById('npl-2').classList.toggle('active', n === 2);
+  updatePreview();
+}
+
+// ═══════════════════════════════════════════════
+// PARTS TOGGLE
+// ═══════════════════════════════════════════════
+function onPartsToggle() {
+  partsEnabled = document.getElementById('partsEnabled').checked;
+  document.getElementById('partsConfig').style.display = partsEnabled ? 'block' : 'none';
+  document.getElementById('partsToggleLabel').textContent = partsEnabled ? 'パートカラーを使用する' : 'パートカラーを使用しない';
+  renderParts();
+  renderBlocks();
+  updatePreview();
+}
+
+function renderParts() {
+  document.getElementById('partsList').innerHTML = parts.map((p, i) => `
+    <div class="part-def-row">
+      <input type="color" class="part-color-pick" value="${p.color}"
+        oninput="parts[${i}].color=this.value;renderBlocks();renderPartLegend();updatePreview()">
+      <input class="part-name-input" type="text" value="${esc(p.name)}" placeholder="パート名"
+        oninput="parts[${i}].name=this.value;renderBlocks();renderPartLegend()">
+      <button class="btn-danger" onclick="removePart(${i})">✕</button>
+    </div>`).join('');
+  document.getElementById('addPartBtn').style.display = parts.length >= 5 ? 'none' : 'block';
+  renderPartLegend();
+}
+
+function renderPartLegend() {
+  document.getElementById('partLegend').innerHTML =
+    `<div class="legend-chip"><div class="legend-dot" style="background:#888"></div><span style="color:var(--muted)">全員</span></div>`
+    + parts.map(p => `<div class="legend-chip"><div class="legend-dot" style="background:${p.color}"></div><span style="color:${p.color}">${esc(p.name)}</span></div>`).join('');
+}
+
+function addPart() {
+  if (parts.length >= 5) return;
+  parts.push({ name: `パート${String.fromCharCode(65+parts.length)}`, color: PART_PALETTE[parts.length] });
+  renderParts(); renderBlocks();
+}
+
+function removePart(i) {
+  blocks.forEach(b => b.lines.forEach(l => {
+    if (l.part === i) l.part = null;
+    else if (l.part !== null && l.part > i) l.part--;
+  }));
+  parts.splice(i, 1);
+  renderParts(); renderBlocks();
+}
+
+// ═══════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════
+const PRESETS = {
+  dark:  { bg:'#000000', text:'#ffffff', accent:'#f59e0b' },
+  white: { bg:'#ffffff', text:'#111111', accent:'#6d28d9' },
+  blue:  { bg:'#0a1628', text:'#e0f2fe', accent:'#38bdf8' },
+  red:   { bg:'#120000', text:'#fff0f0', accent:'#f87171' },
+};
+function applyPreset(key) {
+  const p = PRESETS[key];
+  document.getElementById('bgColor').value = p.bg;
+  document.getElementById('textColor').value = p.text;
+  document.getElementById('accentColor').value = p.accent;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('preset-'+key).classList.add('active');
+  updatePreview();
+}
+
+// ═══════════════════════════════════════════════
+// PREVIEW
+// ═══════════════════════════════════════════════
+function updatePreview() {
+  const bg     = document.getElementById('bgColor').value;
+  const text   = document.getElementById('textColor').value;
+  const accent = document.getElementById('accentColor').value;
+  const font   = document.getElementById('fontFace').value;
+  const size   = parseInt(document.getElementById('fontSize').value);
+  const nextOn = document.getElementById('nextPreviewEnabled').checked;
+  const nextOp = parseInt(document.getElementById('nextOpacity').value) / 100;
+
+  document.getElementById('slidePreview').style.background = bg;
+  // ブロック名はスライドに表示しないのでプレビューにも出さない
+
+  const px = Math.max(9, Math.round(size * 0.34));
+  const pt = document.getElementById('prevText');
+  pt.style.fontFamily = font + ',sans-serif';
+  pt.style.fontSize = px + 'px';
+
+  const ex = [
+    { text:'君の声が聞こえる', part:null },
+    { text:'遠い空の向こうから', part:0 },
+    { text:'涙が止まらない', part:1 },
+  ];
+  if (partsEnabled && parts.length > 0) {
+    pt.innerHTML = ex.map(l => {
+      const c = (l.part !== null && parts[l.part]) ? parts[l.part].color : text;
+      return `<span style="color:${c};display:block">${esc(l.text)}</span>`;
+    }).join('');
+  } else {
+    pt.innerHTML = `<span style="color:${text}">君の声が聞こえる<br>遠い空の向こうから<br>涙が止まらない</span>`;
+  }
+
+  const nextEl = document.getElementById('prevNext');
+  if (nextOn) {
+    const nextColor = blendHex(bg, text, nextOp);
+    const showLabel = document.getElementById('nextLabelEnabled').checked;
+    const labelHtml = showLabel ? `<span style="font-size:6px;letter-spacing:.8px;opacity:.8">NEXT ▶</span> ` : '';
+    nextEl.style.display = 'block';
+    nextEl.style.color = nextColor;
+    nextEl.style.fontFamily = font + ',sans-serif';
+    nextEl.innerHTML = `${labelHtml}<span>ふたりで歌おう</span>`;
+    pt.style.marginTop = '-10px';
+  } else {
+    nextEl.style.display = 'none';
+    pt.style.marginTop = '0';
+  }
+
+  // Repeat badge preview
+  const badge = document.getElementById('prevRepeatBadge');
+  if (lyricsRepeatEnabled) {
+    badge.style.display = 'block';
+    badge.style.background = accent;
+    badge.textContent = formatLyricsRepeatBadge(2, 3); // example: 2nd of 3
+    // Position
+    badge.style.top = '6px'; badge.style.bottom = '';
+    badge.style.left = ''; badge.style.right = '8px';
+    if (lyricsRepeatPos === 'br') { badge.style.top = ''; badge.style.bottom = '6px'; badge.style.right = '8px'; badge.style.left = ''; }
+    if (lyricsRepeatPos === 'tl') { badge.style.top = '6px'; badge.style.bottom = ''; badge.style.right = ''; badge.style.left = '8px'; }
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Blend two hex colors: result = bg*(1-t) + fg*t
+function blendHex(bgHex, fgHex, t) {
+  const br = parseInt(bgHex.slice(1,3),16), bg2 = parseInt(bgHex.slice(3,5),16), bb = parseInt(bgHex.slice(5,7),16);
+  const fr = parseInt(fgHex.slice(1,3),16), fg2 = parseInt(fgHex.slice(3,5),16), fb = parseInt(fgHex.slice(5,7),16);
+  const r = Math.round(br*(1-t)+fr*t);
+  const g = Math.round(bg2*(1-t)+fg2*t);
+  const b = Math.round(bb*(1-t)+fb*t);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ═══════════════════════════════════════════════
+// LOCAL LYRICS PARSER  （API不要・完全オフライン）
+// ═══════════════════════════════════════════════
+
+// Known block label keywords (JP + EN)
+const KNOWN_LABELS = [
+  'イントロ','intro','前奏',
+  'Aメロ','aメロ','verse','verse1','verse2','1番','2番','3番',
+  'Bメロ','bメロ','プレコーラス','pre-chorus','prechorus',
+  'サビ','chorus','hook',
+  'Cメロ','cメロ','bridge','ブリッジ',
+  '大サビ','ラスサビ','落ちサビ','last chorus',
+  '間奏','interlude','ギターソロ','ソロ','solo',
+  'ブレイク','break',
+  'アウトロ','outro','後奏','コーダ','coda','ending',
+  'ラップ','rap',
+];
+
+// ラベル行の条件：既知の音楽用語のみ（前後に数字・記号が少し付く程度はOK、それ以外の文字が入ったら歌詞とみなす）
+const LABEL_KEYWORD_RE = new RegExp(
+  `^(${KNOWN_LABELS.map(l => l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})[0-9０-９\\s]*$`,
+  'i'
+);
+
+function detectLabel(line) {
+  const t = line.trim();
+  // 音楽用語のみの行だけラベルとして認識（それ以外の文字が混じっていれば歌詞）
+  const m = t.match(LABEL_KEYWORD_RE);
+  return m ? m[1].trim() : null;
+}
+
+// Auto-label an unlabeled block group based on structural heuristics
+function autoLabelBlock(groupIdx, totalGroups, fingerprint, fpCounts) {
+  const count = fpCounts[fingerprint] || 1;
+  // If this content repeats 2+ times → likely chorus
+  if (count >= 2) return 'サビ';
+  // Position-based fallbacks
+  if (groupIdx === 0) return 'イントロ';
+  if (groupIdx === totalGroups - 1) return 'アウトロ';
+  // Alternating verse heuristic
+  const verseNum = Math.floor((groupIdx + 1) / 2);
+  const labels = ['Aメロ','Bメロ','Cメロ','Dメロ'];
+  return labels[Math.min(verseNum - 1, labels.length - 1)] || `ブロック${groupIdx + 1}`;
+}
+
+function parseLyrics() {
+  const raw = document.getElementById('lyricsInput').value;
+  if (!raw.trim()) { setStatus('parseStatus','⚠️ 歌詞を入力してください'); return; }
+
+  const btn = document.getElementById('parseBtn');
+  btn.disabled = true;
+
+  // ── STEP 1: Split into raw groups (by empty lines) ──
+  // A group is a consecutive run of non-empty lines, possibly preceded by a label line
+  const lines = raw.split('\n');
+  const rawGroups = []; // [{label: string|null, lines: string[]}]
+  let cur = { label: null, lines: [] };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    // スペース・全角スペース・タブのみの行は空行として扱う（ブロック区切り）
+    const isBlank = line.trim() === '' || /^[\s\u3000\uFEFF]+$/.test(line);
+
+    if (isBlank) {
+      // Empty line → flush current group
+      if (cur.lines.length > 0) {
+        rawGroups.push(cur);
+        cur = { label: null, lines: [] };
+      }
+      continue;
+    }
+
+    const detected = detectLabel(line);
+    if (detected !== null) {
+      // This line is a label
+      if (cur.lines.length > 0) {
+        // Flush previous content first
+        rawGroups.push(cur);
+      }
+      cur = { label: detected, lines: [] };
+    } else {
+      cur.lines.push(line);
+    }
+  }
+  if (cur.lines.length > 0) rawGroups.push(cur);
+
+  // Handle edge case: label with no following lines → merge with next group
+  const merged = [];
+  for (let i = 0; i < rawGroups.length; i++) {
+    const g = rawGroups[i];
+    if (g.lines.length === 0 && g.label && i + 1 < rawGroups.length) {
+      rawGroups[i + 1].label = rawGroups[i + 1].label || g.label;
+    } else {
+      merged.push(g);
+    }
+  }
+
+  if (!merged.length) {
+    setStatus('parseStatus','⚠️ 歌詞テキストを検出できませんでした');
+    btn.disabled = false;
+    return;
+  }
+
+  // ── STEP 2: Compute fingerprints for auto-labeling ──
+  const fps = merged.map(g => g.lines.map(l => l.trim()).filter(Boolean).join('\n').toLowerCase());
+  const fpCounts = {};
+  fps.forEach(fp => { fpCounts[fp] = (fpCounts[fp] || 0) + 1; });
+
+  // ── STEP 3: Assign labels ──
+  blocks = merged.map((g, idx) => {
+    const fp = fps[idx];
+    const label = g.label || autoLabelBlock(idx, merged.length, fp, fpCounts);
+    return {
+      label,
+      lines: g.lines.map(t => ({ text: t, part: null })),
+      splitSlides: 1,
+      splitPoints: [],
+    };
+  });
+
+  // ── STEP 4: Results ──
+  const labeled  = blocks.filter(b => merged[blocks.indexOf(b)]?.label).length;
+  const detected = blocks.filter((_, i) => !merged[i]?.label).length;
+
+  renderBlocks();
+  updateSlideCount();
+
+  const info = labeled > 0
+    ? `（ラベル検出 ${labeled}件・自動推定 ${detected}件）`
+    : `（空行区切りで自動分割）`;
+  setStatus('parseStatus', `✅ ${blocks.length}ブロックを検出しました ${info}`, 'ok');
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>⚡</span> 自動解析（無料・即時）';
+}
+
+// ═══════════════════════════════════════════════
+// RENDER BLOCKS
+// ═══════════════════════════════════════════════
+function renderBlocks() {
+  const container = document.getElementById('blocksList');
+  if (!blocks.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🎵</div>歌詞を入力して「AIでブロック自動分割」を押すと<br>ここにブロックが表示されます</div>';
+    return;
+  }
+  const repeatMap = computeRepeatMap();
+  const lyricsRepeatInfo = lyricsRepeatEnabled ? computeLyricsRepeatInfo() : {};
+
+  container.innerHTML = blocks.map((b, bi) => {
+    const pts = b.splitPoints || [];
+    const ss  = pts.length + 1; // 実際のスライド分割数
+    const totalLines = b.lines.length;
+    const slideBadge = ss > 1
+      ? `<span class="block-slide-badge">→ ${ss}スライド</span>`
+      : '';
+    const finalLabel = repeatMap[bi];
+    const repeatBadge = (repeatCountEnabled && finalLabel !== b.label)
+      ? `<span class="block-slide-badge" style="background:rgba(16,185,129,.12);color:#34d399;border-color:rgba(16,185,129,.3)">${esc(finalLabel)}</span>`
+      : '';
+    // Lyrics repeat detection badge
+    const lri = lyricsRepeatInfo[bi];
+    const lyricsBadge = lri
+      ? `<span class="block-slide-badge" style="background:rgba(245,158,11,.15);color:var(--amber);border-color:rgba(245,158,11,.4);font-size:11px" title="同じ歌詞が${lri.total}回登場・${lri.idx}回目">🔁 ${formatLyricsRepeatBadge(lri.idx, lri.total)}</span>`
+      : '';
+
+    // オーバーフロー警告
+    const fs = parseInt(document.getElementById('fontSize').value) || 40;
+    const warnBadge = checkBlockOverflow(b, null, fs)
+      ? `<span class="overflow-warn" title="文字数が多くスライドにはみ出る可能性があります。÷で分割するか文字サイズを下げてください">⚠️ はみ出し注意</span>`
+      : '';
+
+    return `
+    <div class="block-card" id="block-${bi}">
+      <div class="block-header">
+        <span class="block-num">${bi+1}</span>
+        <input class="block-label-input" value="${esc(b.label)}" placeholder="ブロック名"
+          oninput="blocks[${bi}].label=this.value;renderBlocks()">
+        ${repeatBadge}${lyricsBadge}${warnBadge}${slideBadge}
+        <span class="block-line-count" id="lc-${bi}">${totalLines}行</span>
+        <div class="split-btns" title="スライド分割数">
+          ${[1,2,3,4,5,6].map(n=>`<button class="split-btn ${ss===n?'active':''}" onclick="setSplit(${bi},${n})">${n===1?'×1':'÷'+n}</button>`).join('')}
+        </div>
+        <button class="btn-danger" onclick="removeBlock(${bi})">✕</button>
+      </div>
+      <div class="block-lines" id="lines-${bi}">
+        ${renderLinesHtml(bi)}
+        <button class="add-line-btn" onclick="addLine(${bi})">＋ 行を追加</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLinesHtml(bi) {
+  const b   = blocks[bi];
+  const pts = new Set(b.splitPoints || []);
+  const n   = b.lines.length;
+
+  // スライド番号を計算するためのマップ
+  let slideNum = 1;
+  const slideNumAt = {}; // li → そのgapに表示するスライド番号（次のスライド）
+  for (let li = 0; li < n - 1; li++) {
+    if (pts.has(li)) {
+      slideNum++;
+      slideNumAt[li] = slideNum;
+    }
+  }
+
+  let html = '';
+  b.lines.forEach((line, li) => {
+    html += buildLineRow(bi, li, line);
+    // 最後の行以外にgapゾーンを挿入
+    if (li < n - 1) {
+      const isActive = pts.has(li);
+      const sNum     = slideNumAt[li] || '';
+      if (isActive) {
+        html += `<div class="split-gap active" onclick="toggleSplitPoint(${bi},${li})">
+          <div class="split-gap-line"></div>
+          <span class="split-gap-label">── スライド ${sNum} ──</span>
+          <div class="split-gap-line"></div>
+          <button class="split-gap-rm" onclick="event.stopPropagation();toggleSplitPoint(${bi},${li})" title="この分割を削除">✕</button>
+        </div>`;
+      } else {
+        html += `<div class="split-gap" onclick="toggleSplitPoint(${bi},${li})">
+          <div class="split-gap-line"></div>
+          <span class="split-gap-hint">＋ ここで分割</span>
+          <div class="split-gap-line"></div>
+        </div>`;
+      }
+    }
+  });
+  return html;
+}
+
+function buildLineRow(bi, li, line) {
+  const textColor = getLineDisplayColor(line.part);
+  const pills = partsEnabled ? buildPills(bi, li, line.part) : '';
+  const len   = [...(line.text || '')].length;
+  // 1スライド幅に収まる文字数目安（40pt時 ≈ 20文字、フォントサイズに依存）
+  const fs    = parseInt(document.getElementById('fontSize').value) || 40;
+  const maxCh = Math.max(8, Math.floor(883 / (fs * 1.333)));
+  const isLong = len > maxCh;
+  const badgeCls  = isLong ? 'warn' : 'ok';
+  const badgeTip  = isLong ? `${len}文字 — 分割推奨（目安${maxCh}文字以下）` : `${len}文字`;
+
+  return `<div class="line-row" id="lr-${bi}-${li}">
+    ${pills ? `<div class="part-pills">${pills}</div>` : ''}
+    <input class="line-text-input" type="text"
+      value="${esc(line.text)}"
+      style="color:${textColor}"
+      oninput="blocks[${bi}].lines[${li}].text=this.value;updateLineLenBadge(${bi},${li})"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();splitLineAtCursor(${bi},${li},this)}"
+      placeholder="歌詞を入力...">
+    <span class="line-len-badge ${badgeCls}" id="llb-${bi}-${li}" title="${badgeTip}">${len}</span>
+    <button class="line-split-btn" title="カーソル位置で行を分割（Enterキーでも可）"
+      onclick="splitLineAtCursor(${bi},${li},document.querySelector('#lr-${bi}-${li} .line-text-input'))">↵</button>
+    <button class="line-del-btn" onclick="removeLine(${bi},${li})">✕</button>
+  </div>`;
+}
+
+function buildPills(bi, li, currentPart) {
+  let h = `<button class="part-pill pill-all ${currentPart===null?'active':''}"
+    onclick="setLinePart(${bi},${li},null)" title="全員">全</button>`;
+  parts.forEach((p, pi) => {
+    h += `<button class="part-pill pill-part ${currentPart===pi?'active':''}"
+      style="background:${p.color}"
+      onclick="setLinePart(${bi},${li},${pi})"
+      title="${esc(p.name)}">${String.fromCharCode(65+pi)}</button>`;
+  });
+  return h;
+}
+
+function getLineDisplayColor(partIdx) {
+  if (!partsEnabled || partIdx === null || !parts[partIdx]) return document.getElementById('textColor').value;
+  return parts[partIdx].color;
+}
+
+// ═══════════════════════════════════════════════
+// MUTATIONS
+// ═══════════════════════════════════════════════
+function setSplit(bi, n) {
+  const totalLines = blocks[bi].lines.length;
+  if (n === 1) {
+    blocks[bi].splitPoints = [];
+  } else {
+    // n等分の自動計算
+    const pts = new Set();
+    for (let s = 1; s < n; s++) {
+      const idx = Math.ceil(totalLines * s / n) - 1;
+      if (idx >= 0 && idx < totalLines - 1) pts.add(idx);
+    }
+    blocks[bi].splitPoints = [...pts].sort((a,b)=>a-b);
+  }
+  blocks[bi].splitSlides = n; // ボタンのハイライト用に同期
+  rerenderLines(bi);
+  renderBlocks(); // バッジ更新のため
+  updateSlideCount();
+}
+
+function toggleSplitPoint(bi, li) {
+  const pts = blocks[bi].splitPoints || [];
+  const idx = pts.indexOf(li);
+  if (idx === -1) {
+    pts.push(li);
+  } else {
+    pts.splice(idx, 1);
+  }
+  pts.sort((a,b)=>a-b);
+  blocks[bi].splitPoints = pts;
+  blocks[bi].splitSlides = pts.length + 1; // 同期
+  rerenderLines(bi);
+  renderBlocks(); // バッジ・ボタンのハイライト更新
+  updateSlideCount();
+}
+
+// ブロック内のlines部分だけ再描画（全体renderBlocksより軽量）
+function rerenderLines(bi) {
+  const linesDiv = document.getElementById(`lines-${bi}`);
+  if (!linesDiv) return;
+  const addBtn = linesDiv.querySelector('.add-line-btn');
+  linesDiv.querySelectorAll('.line-row,.split-gap,.split-divider').forEach(el => el.remove());
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderLinesHtml(bi);
+  while (tmp.firstChild) linesDiv.insertBefore(tmp.firstChild, addBtn);
+}
+
+function setLinePart(bi, li, partIdx) {
+  syncLineText(bi, li);
+  blocks[bi].lines[li].part = partIdx;
+  const row = document.getElementById(`lr-${bi}-${li}`);
+  if (row) row.outerHTML = buildLineRow(bi, li, blocks[bi].lines[li]);
+}
+
+function syncLineText(bi, li) {
+  const el = document.querySelector(`#lr-${bi}-${li} .line-text-input`);
+  if (el) blocks[bi].lines[li].text = el.value;
+}
+
+// カーソル位置（または文字列中央）で行を2行に分割
+function splitLineAtCursor(bi, li, inputEl) {
+  // まず最新テキストを同期
+  const text = inputEl ? inputEl.value : blocks[bi].lines[li].text;
+  blocks[bi].lines[li].text = text;
+
+  const pos = inputEl ? inputEl.selectionStart : Math.ceil(text.length / 2);
+  // カーソルが端にある場合は中央で分割
+  const splitAt = (pos === 0 || pos === text.length) ? Math.ceil(text.length / 2) : pos;
+
+  const before = text.slice(0, splitAt).trimEnd();
+  const after  = text.slice(splitAt).trimStart();
+
+  // 元の行を前半に置き換え、後半を次の行として挿入
+  const part = blocks[bi].lines[li].part;
+  blocks[bi].lines[li].text = before;
+  blocks[bi].lines.splice(li + 1, 0, { text: after, part });
+
+  // splitPoints補正：li+1以降のインデックスを+1
+  blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
+    .map(p => p > li ? p + 1 : p);
+  blocks[bi].splitSlides = blocks[bi].splitPoints.length + 1;
+
+  rerenderLines(bi);
+
+  // 新しい行（後半）の先頭にフォーカス
+  setTimeout(() => {
+    const nextInput = document.querySelector(`#lr-${bi}-${li+1} .line-text-input`);
+    if (nextInput) { nextInput.focus(); nextInput.setSelectionRange(0, 0); }
+  }, 30);
+
+  refreshLineCount(bi);
+  updateSlideCount();
+}
+
+// 文字数バッジをリアルタイム更新
+function updateLineLenBadge(bi, li) {
+  const inp = document.querySelector(`#lr-${bi}-${li} .line-text-input`);
+  const badge = document.getElementById(`llb-${bi}-${li}`);
+  if (!inp || !badge) return;
+  const len = [...inp.value].length;
+  const fs  = parseInt(document.getElementById('fontSize').value) || 40;
+  const maxCh = Math.max(8, Math.floor(883 / (fs * 1.333)));
+  badge.textContent = len;
+  badge.className   = `line-len-badge ${len > maxCh ? 'warn' : 'ok'}`;
+  badge.title       = len > maxCh ? `${len}文字 — 分割推奨（目安${maxCh}文字以下）` : `${len}文字`;
+}
+
+function addLine(bi) {
+  blocks[bi].lines.push({text:'',part:null});
+  const li = blocks[bi].lines.length - 1;
+  // splitPointsの調整不要（末尾追加なので既存インデックスに影響なし）
+  rerenderLines(bi);
+  document.querySelector(`#lr-${bi}-${li} .line-text-input`)?.focus();
+  refreshLineCount(bi);
+  updateSlideCount();
+}
+
+function removeLine(bi, li) {
+  syncLineText(bi, li);
+  blocks[bi].lines.splice(li, 1);
+  // splitPoints補正：削除した行のポイントを除去、それ以降を-1
+  blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
+    .filter(p => p !== li)
+    .map(p => p > li ? p - 1 : p)
+    .filter(p => p >= 0 && p < blocks[bi].lines.length - 1);
+  blocks[bi].splitSlides = blocks[bi].splitPoints.length + 1;
+  rerenderLines(bi);
+  refreshLineCount(bi);
+  updateSlideCount();
+}
+
+function removeBlock(bi) {
+  blocks.splice(bi, 1);
+  renderBlocks(); updateSlideCount();
+}
+
+function addBlock() {
+  blocks.push({label:`ブロック${blocks.length+1}`, lines:[], splitSlides:1, splitPoints:[]});
+  renderBlocks(); updateSlideCount();
+  setTimeout(() => {
+    document.getElementById('blocksList').lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    document.querySelectorAll('.block-label-input').at(-1)?.focus();
+  }, 80);
+}
+
+function refreshLineCount(bi) {
+  const el = document.getElementById(`lc-${bi}`);
+  if (el) el.textContent = blocks[bi].lines.length + '行';
+}
+
+function updateSlideCount() {
+  const total = countTotalSlides();
+  document.getElementById('slideCountNum').textContent = total;
+  document.getElementById('slideCountBar').style.display = blocks.length ? 'flex' : 'none';
+}
+
+function countTotalSlides() {
+  const hasLegend = partsEnabled && parts.length > 0;
+  let n = 1 + (hasLegend ? 1 : 0);
+  blocks.forEach(b => {
+    if (b.lines.some(l => l.text.trim())) {
+      n += (b.splitPoints?.length || 0) + 1;
+    }
+  });
+  return n;
+}
+
+// ═══════════════════════════════════════════════
+// EXPAND BLOCKS → SLIDE UNITS
+// Each unit = { label, lines[], isFirst, isLast }
+// ═══════════════════════════════════════════════
+function expandToSlideUnits() {
+  const units = [];
+  const repeatMap = computeRepeatMap();
+  const lyricsRepeatInfo = lyricsRepeatEnabled ? computeLyricsRepeatInfo() : {};
+
+  blocks.forEach((b, bi) => {
+    if (!b.lines.some(l => l.text.trim())) return;
+    const baseLabel = repeatMap[bi];
+    const lri       = lyricsRepeatInfo[bi] || null;
+    const pts       = new Set(b.splitPoints || []);
+
+    // splitPointsでb.linesをチャンク分割し、各チャンクから空行を除去
+    const chunks = [];
+    let chunk    = [];
+    b.lines.forEach((line, li) => {
+      if (line.text.trim()) chunk.push(line);
+      if (pts.has(li) && li < b.lines.length - 1) {
+        chunks.push(chunk);
+        chunk = [];
+      }
+    });
+    chunks.push(chunk);
+
+    const validChunks = chunks.filter(c => c.length > 0);
+    const total = validChunks.length;
+
+    validChunks.forEach((lines, ci) => {
+      const suffix = total > 1 ? ` (${ci+1}/${total})` : '';
+      units.push({ label: baseLabel + suffix, lines, lri });
+    });
+  });
+  return units;
+}
+
+// ═══════════════════════════════════════════════
+// SYNC DOM → STATE
+// ═══════════════════════════════════════════════
+function syncAll() {
+  blocks.forEach((b, bi) => {
+    const lbl = document.querySelector(`#block-${bi} .block-label-input`);
+    if (lbl) b.label = lbl.value;
+    b.lines.forEach((line, li) => {
+      const inp = document.querySelector(`#lr-${bi}-${li} .line-text-input`);
+      if (inp) line.text = inp.value;
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function esc(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function setStatus(id,html,cls='') {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.className = 'status'+(cls?' '+cls:'');
+}
+
+// 初期化
+renderSongTabs();
+updatePreview();
+</script>
+</body>
+</html>
