@@ -2074,7 +2074,6 @@ function updatePreview() {
 
 // アクティブブロックを更新してプレビューを即時反映
 function setActiveBlock(bi) {
-  if (activeBlockIdx === bi) return;
   activeBlockIdx = bi;
   updatePreview();
 }
@@ -2213,8 +2212,8 @@ function parseLyrics() {
 
   renderBlocks();
   updateSlideCount();
-
-  const info = labeled > 0
+  activeBlockIdx = 0;
+  updatePreview();
     ? `（ラベル検出 ${labeled}件・自動推定 ${detected}件）`
     : `（空行区切りで自動分割）`;
   setStatus('parseStatus', `✅ ${blocks.length}ブロックを検出しました ${info}`, 'ok');
