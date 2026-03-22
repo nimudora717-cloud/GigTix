@@ -974,7 +974,10 @@
       </div>
 
       <div class="divider" style="margin-top:14px"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-bottom:8px;text-transform:uppercase">スライドプレビュー</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;text-transform:uppercase">スライドプレビュー</div>
+        <div id="previewBlockLabel" style="font-size:11px;font-weight:700;color:var(--amber);letter-spacing:.3px"></div>
+      </div>
       <div class="preview-wrap">
         <div class="slide-preview" id="slidePreview" style="background:#000">
           <!-- ブロック名はプレビューにも表示しない -->
@@ -1457,6 +1460,7 @@ const PART_PALETTE = ['#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24'];
 let lyricsRepeatEnabled = false;
 let lyricsRepeatFmt = 'kaime';
 let lyricsRepeatPos = 'tr';
+let activeBlockIdx  = 0; // プレビューに表示中のブロックインデックス
 
 const CIRCLE_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
 
@@ -1969,59 +1973,111 @@ function updatePreview() {
   const nextOp = parseInt(document.getElementById('nextOpacity').value) / 100;
 
   document.getElementById('slidePreview').style.background = bg;
-  // ブロック名はスライドに表示しないのでプレビューにも出さない
 
   const px = Math.max(9, Math.round(size * 0.34));
   const pt = document.getElementById('prevText');
   pt.style.fontFamily = font + ',sans-serif';
-  pt.style.fontSize = px + 'px';
+  pt.style.fontSize   = px + 'px';
 
-  const ex = [
-    { text:'君の声が聞こえる', part:null },
-    { text:'遠い空の向こうから', part:0 },
-    { text:'涙が止まらない', part:1 },
-  ];
-  if (partsEnabled && parts.length > 0) {
-    pt.innerHTML = ex.map(l => {
-      const c = (l.part !== null && parts[l.part]) ? parts[l.part].color : text;
-      return `<span style="color:${c};display:block">${esc(l.text)}</span>`;
+  // ── 表示するブロックを決定 ──
+  // activeBlockIdx が有効なブロックを指していれば実データを使用
+  const validBlocks = blocks.filter(b => b.lines.some(l => l.text.trim()));
+  const b = (blocks.length > 0 && blocks[activeBlockIdx]?.lines?.some(l => l.text.trim()))
+    ? blocks[activeBlockIdx]
+    : (validBlocks.length > 0 ? validBlocks[0] : null);
+
+  const lbl = document.getElementById('previewBlockLabel');
+
+  if (b) {
+    // ── 実ブロックのデータをプレビューに反映 ──
+    lbl.textContent = b.label || '';
+
+    // splitPointsを考慮して最初のチャンクを取得
+    const pts = new Set(b.splitPoints || []);
+    let chunk = [];
+    for (let li = 0; li < b.lines.length; li++) {
+      const line = b.lines[li];
+      if (line.text.trim()) chunk.push(line);
+      if (pts.has(li) && chunk.length) break; // 最初の分割点まで
+    }
+    const previewLines = chunk.length ? chunk : b.lines.filter(l => l.text.trim());
+
+    pt.innerHTML = previewLines.map(l => {
+      let col = text;
+      if (partsEnabled && l.part !== null && parts[l.part]) col = parts[l.part].color;
+      return `<span style="color:${col};display:block">${esc(l.text)}</span>`;
     }).join('');
-  } else {
-    pt.innerHTML = `<span style="color:${text}">君の声が聞こえる<br>遠い空の向こうから<br>涙が止まらない</span>`;
-  }
 
-  const nextEl = document.getElementById('prevNext');
-  if (nextOn) {
-    const nextColor = blendHex(bg, text, nextOp);
-    const showLabel = document.getElementById('nextLabelEnabled').checked;
-    const labelHtml = showLabel ? `<span style="font-size:6px;letter-spacing:.8px;opacity:.8">NEXT ▶</span> ` : '';
-    nextEl.style.display = 'block';
-    nextEl.style.color = nextColor;
-    nextEl.style.fontFamily = font + ',sans-serif';
-    nextEl.innerHTML = `${labelHtml}<span>ふたりで歌おう</span>`;
-    pt.style.marginTop = '-10px';
+    // 次の歌詞プレビュー（次ブロックの最初の行）
+    const nextEl = document.getElementById('prevNext');
+    if (nextOn) {
+      const nextColor  = blendHex(bg, text, nextOp);
+      const showLabel  = document.getElementById('nextLabelEnabled').checked;
+      // 次のブロックを探す
+      const bi = blocks.indexOf(b);
+      const nextBlock = blocks.slice(bi + 1).find(nb => nb.lines.some(l => l.text.trim()));
+      if (nextBlock) {
+        const nextLines = nextBlock.lines.filter(l => l.text.trim());
+        const nextText  = (showLabel ? 'NEXT ▶  ' : '') + nextLines.slice(0, nextPreviewLines).map(l=>l.text).join('　');
+        nextEl.style.display  = 'block';
+        nextEl.style.color    = nextColor;
+        nextEl.style.fontFamily = font + ',sans-serif';
+        nextEl.innerHTML      = esc(nextText);
+        pt.style.marginTop    = '-10px';
+      } else {
+        nextEl.style.display  = 'none';
+        pt.style.marginTop    = '0';
+      }
+    } else {
+      document.getElementById('prevNext').style.display = 'none';
+      pt.style.marginTop = '0';
+    }
   } else {
-    nextEl.style.display = 'none';
+    // ── ブロックがまだない場合はダミー ──
+    lbl.textContent = '';
+    const ex = [
+      { text:'君の声が聞こえる', part:null },
+      { text:'遠い空の向こうから', part:0 },
+      { text:'涙が止まらない', part:1 },
+    ];
+    if (partsEnabled && parts.length > 0) {
+      pt.innerHTML = ex.map(l => {
+        const c = (l.part !== null && parts[l.part]) ? parts[l.part].color : text;
+        return `<span style="color:${c};display:block">${esc(l.text)}</span>`;
+      }).join('');
+    } else {
+      pt.innerHTML = `<span style="color:${text}">君の声が聞こえる<br>遠い空の向こうから<br>涙が止まらない</span>`;
+    }
+    document.getElementById('prevNext').style.display = 'none';
     pt.style.marginTop = '0';
   }
 
-  // Repeat badge preview
+  // ── 繰り返しバッジ ──
   const badge = document.getElementById('prevRepeatBadge');
-  if (lyricsRepeatEnabled) {
-    badge.style.display = 'block';
-    badge.style.background = accent;
-    badge.textContent = formatLyricsRepeatBadge(2, 3); // example: 2nd of 3
-    // Position
-    badge.style.top = '6px'; badge.style.bottom = '';
-    badge.style.left = ''; badge.style.right = '8px';
-    if (lyricsRepeatPos === 'br') { badge.style.top = ''; badge.style.bottom = '6px'; badge.style.right = '8px'; badge.style.left = ''; }
-    if (lyricsRepeatPos === 'tl') { badge.style.top = '6px'; badge.style.bottom = ''; badge.style.right = ''; badge.style.left = '8px'; }
+  if (lyricsRepeatEnabled && b) {
+    const lri = computeLyricsRepeatInfo()[blocks.indexOf(b)];
+    if (lri) {
+      badge.style.display = 'block';
+      badge.style.background = accent;
+      badge.textContent = formatLyricsRepeatBadge(lri.idx, lri.total);
+      badge.style.top = '6px'; badge.style.bottom = '';
+      badge.style.left = ''; badge.style.right = '8px';
+      if (lyricsRepeatPos === 'br') { badge.style.top = ''; badge.style.bottom = '6px'; }
+      if (lyricsRepeatPos === 'tl') { badge.style.right = ''; badge.style.left = '8px'; }
+    } else {
+      badge.style.display = 'none';
+    }
   } else {
     badge.style.display = 'none';
   }
 }
 
-// Blend two hex colors: result = bg*(1-t) + fg*t
+// アクティブブロックを更新してプレビューを即時反映
+function setActiveBlock(bi) {
+  if (activeBlockIdx === bi) return;
+  activeBlockIdx = bi;
+  updatePreview();
+}
 function blendHex(bgHex, fgHex, t) {
   const br = parseInt(bgHex.slice(1,3),16), bg2 = parseInt(bgHex.slice(3,5),16), bb = parseInt(bgHex.slice(5,7),16);
   const fr = parseInt(fgHex.slice(1,3),16), fg2 = parseInt(fgHex.slice(3,5),16), fb = parseInt(fgHex.slice(5,7),16);
@@ -2207,7 +2263,8 @@ function renderBlocks() {
       <div class="block-header">
         <span class="block-num">${bi+1}</span>
         <input class="block-label-input" value="${esc(b.label)}" placeholder="ブロック名"
-          oninput="blocks[${bi}].label=this.value;renderBlocks()">
+          oninput="blocks[${bi}].label=this.value;renderBlocks()"
+          onfocus="setActiveBlock(${bi})">
         ${repeatBadge}${lyricsBadge}${warnBadge}${slideBadge}
         <span class="block-line-count" id="lc-${bi}">${totalLines}行</span>
         <div class="split-btns" title="スライド分割数">
@@ -2281,6 +2338,7 @@ function buildLineRow(bi, li, line) {
       value="${esc(line.text)}"
       style="color:${textColor}"
       oninput="blocks[${bi}].lines[${li}].text=this.value;updateLineLenBadge(${bi},${li})"
+      onfocus="setActiveBlock(${bi})"
       onkeydown="if(event.key==='Enter'){event.preventDefault();splitLineAtCursor(${bi},${li},this)}"
       placeholder="歌詞を入力...">
     <span class="line-len-badge ${badgeCls}" id="llb-${bi}-${li}" title="${badgeTip}">${len}</span>
