@@ -367,6 +367,38 @@
     .line-row:hover .line-split-btn { opacity: 1; }
     .line-split-btn:hover { color: var(--green); }
 
+    /* 太字トグルボタン */
+    .line-bold-btn {
+      background: transparent; border: 1px solid transparent;
+      color: var(--muted); cursor: pointer; font-size: 12px;
+      font-weight: 900; padding: 2px 6px; border-radius: 5px;
+      opacity: 0; transition: opacity .15s, color .15s, border-color .15s;
+      font-family: serif; flex-shrink: 0;
+    }
+    .line-row:hover .line-bold-btn { opacity: 1; }
+    .line-bold-btn:hover { color: var(--text); }
+    .line-bold-btn.active {
+      opacity: 1; color: var(--amber);
+      border-color: rgba(245,158,11,.4);
+      background: rgba(245,158,11,.08);
+    }
+
+    /* パート表示スタイル選択 */
+    .display-mode-row { display: flex; gap: 5px; margin-bottom: 12px; }
+    .display-mode-btn {
+      flex: 1; padding: 7px 4px; font-size: 11px; font-weight: 700;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px; cursor: pointer;
+      font-family: inherit; transition: all .15s; text-align: center;
+      line-height: 1.3;
+    }
+    .display-mode-btn:hover { border-color: var(--border-hi); color: var(--text); }
+    .display-mode-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,.05); }
+
+    /* 行表示スタイル（エディタ上のプレビュー） */
+    .line-text-input.style-underline { text-decoration: underline 2px; }
+    .line-text-input.style-bg { border-radius: 5px; font-weight: 700; }
+
     /* 文字数インジケーター（長い行に表示） */
     .line-len-badge {
       font-size: 10px; font-weight: 700; padding: 1px 5px;
@@ -829,12 +861,19 @@
         <span style="font-size:13px;color:var(--muted)" id="partsToggleLabel">パートカラーを使用しない</span>
       </div>
       <div id="partsConfig" style="display:none">
-        <div class="hint-box">
-          各行の左の丸ボタンでパートを割り当てると、スライドの文字色がパートごとに変わります。<br>
-          <strong>全</strong>ボタン = メインカラー（全員）。
+        <!-- 表示スタイル -->
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">パート表示スタイル</div>
+        <div class="display-mode-row">
+          <button class="display-mode-btn active" id="dm-text"      onclick="setDisplayMode('text')">🎨<br>文字色</button>
+          <button class="display-mode-btn"         id="dm-underline" onclick="setDisplayMode('underline')">➖<br>下線</button>
+          <button class="display-mode-btn"         id="dm-bg"       onclick="setDisplayMode('bg')">🟥<br>背景色</button>
+        </div>
+        <div class="hint-box" style="margin-bottom:10px">
+          各行の丸ボタンで担当パートを選択（複数選択OK）。<br>
+          <strong>全</strong> = 全員・デフォルト色。複数パートは色を重ねて表示。
         </div>
         <div class="parts-list" id="partsList"></div>
-        <button class="add-part-btn" onclick="addPart()" id="addPartBtn">＋ パートを追加（最大5つ）</button>
+        <button class="add-part-btn" onclick="addPart()" id="addPartBtn">＋ パートを追加（最大10）</button>
         <div class="part-legend" id="partLegend"></div>
       </div>
     </div>
@@ -1094,20 +1133,27 @@ function xesc(s) {
 
 // テキストボックス（段落＝行単位、行ごとに色指定可能）
 function makeBox(id, x, y, w, h, lines, opts = {}) {
-  // lines = [{text, color, bold, italic, sz}]
-  const font    = xesc(opts.font || 'Meiryo');
-  const defSz   = Math.round((opts.sz || 36) * 100);
-  const align   = opts.align || 'ctr';
-  const valign  = opts.valign || 'ctr';
-  const paras   = lines.map(l => {
-    const sz = Math.round((l.sz || opts.sz || 36) * 100);
+  // lines = [{text, color, bold, italic, sz, underline, highlight}]
+  // underline: true/false, highlight: hex string (for bg style)
+  const font   = xesc(opts.font || 'Meiryo');
+  const align  = opts.align || 'ctr';
+  const valign = opts.valign || 'ctr';
+  const paras  = lines.map(l => {
+    const sz   = Math.round((l.sz || opts.sz || 36) * 100);
     const col  = (l.color || opts.color || 'FFFFFF').replace('#','');
-    const bold = l.bold !== undefined ? (l.bold ? '1' : '0') : (opts.bold ? '1' : '0');
+    const bold = l.bold !== undefined ? (l.bold ? '1' : '0') : '1'; // デフォルト太字
     const ital = l.italic ? '1' : '0';
+    const uxml = l.underline ? ` u="sng"` : '';
+    // 背景色（ハイライト）はa:highlightで指定
+    const hlXml = l.highlight
+      ? `<a:highlight><a:srgbClr val="${l.highlight.replace('#','')}"/></a:highlight>`
+      : '';
+    // 黒縁（背景色モード時）はrPrのlnXmlで代替できないためOutlineとして近似
     const la = l.align || align;
     return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="140000"/></a:lnSpc></a:pPr>` +
-      `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}" dirty="0">` +
+      `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}"${uxml} dirty="0">` +
       `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
+      `${hlXml}` +
       `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
       `<a:t>${xesc(l.text)}</a:t></a:r></a:p>`;
   }).join('');
@@ -1217,15 +1263,34 @@ function buildPptxBytes(songData, design) {
     const validLines = unit.lines.filter(l => l.text.trim());
     if (validLines.length) {
       const mainH = nextOn && nextUnit ? 4.85 : 5.1;
-      // スライドごとに最適フォントサイズを自動計算（設定値を上限）
       const optFs = calcOptimalFontSize(validLines, fs);
       const lyricLines = validLines.map(line => {
+        const lineParts = line.parts || [];
+        const isBold    = line.bold !== false;
         let col = txHex;
-        if (partsEnabled && line.part !== null && parts[line.part])
-          col = parts[line.part].color.replace('#','');
-        return {text: line.text, color: col, sz: optFs};
+        let underline = false;
+        let highlight = null;
+
+        if (partsEnabled && lineParts.length > 0) {
+          if (partDisplayMode === 'text') {
+            // 複数パートの場合は最初のパートの色で表示
+            const p0 = parts[lineParts[0]];
+            if (p0) col = p0.color.replace('#','');
+          } else if (partDisplayMode === 'underline') {
+            underline = true;
+            const p0 = parts[lineParts[0]];
+            if (p0) col = p0.color.replace('#','');
+          } else if (partDisplayMode === 'bg') {
+            const p0 = parts[lineParts[0]];
+            if (p0) {
+              highlight = p0.color;
+              col = '000000'; // 背景色モードは黒文字
+            }
+          }
+        }
+        return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight };
       });
-      sh.push(makeBox(id++, inch(0.4), inch(0.25), inch(9.2), inch(mainH),
+      sh.push(makeBox(id++, inch(0.25), inch(0.18), inch(9.5), inch(mainH),
         lyricLines, {font, align:'ctr', valign:'ctr'}));
     }
 
@@ -1455,7 +1520,22 @@ let parts = [
 ];
 let partsEnabled = false;
 let nextPreviewLines = 1;
-const PART_PALETTE = ['#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24'];
+const PART_PALETTE = [
+  '#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24',
+  '#fb923c','#e879f9','#2dd4bf','#f9a8d4','#a3e635'
+];
+
+let partDisplayMode = 'text'; // 'text' | 'underline' | 'bg'
+
+// ── 表示スタイル切り替え ──
+function setDisplayMode(mode) {
+  partDisplayMode = mode;
+  ['text','underline','bg'].forEach(m =>
+    document.getElementById('dm-'+m)?.classList.toggle('active', m === mode)
+  );
+  renderBlocks();
+  updatePreview();
+}
 
 let lyricsRepeatEnabled = false;
 let lyricsRepeatFmt = 'kaime';
@@ -1505,11 +1585,12 @@ function checkBlockOverflow(block, _unused, fontSizePt) {
 // 指定ブロックに最適なフォントサイズ(pt)を計算
 function calcOptimalFontSize(lines, maxPt = 60, minPt = 14) {
   if (!lines.length) return maxPt;
-  const slideW_px = (10 - 0.8) * 96;
-  const slideH_px = (5.625 - 0.4) * 96;
+  // スライド有効エリア（余白を最小限に）
+  const slideW_px = (10 - 0.5) * 96;  // 余白 0.25インチ × 2
+  const slideH_px = (5.625 - 0.35) * 96;
   for (let pt = maxPt; pt >= minPt; pt -= 2) {
     const charW = pt * 1.333;
-    const lineH = pt * 1.333 * 1.55;
+    const lineH = pt * 1.333 * 1.45; // 行間を少し詰める
     const maxChars = Math.floor(slideW_px / charW);
     const maxLines = Math.floor(slideH_px / lineH);
     let total = 0;
@@ -1565,9 +1646,10 @@ function openSlideModal() {
     const optFs = calcOptimalFontSize(validLines, fsBase);
 
     const lines = validLines.map(line => {
+      const lps = line.parts || [];
       let col = txHex;
-      if (partsEnabled && line.part !== null && parts[line.part]) col = parts[line.part].color;
-      return { t: line.text, color: col, sz: optFs };
+      if (partsEnabled && lps.length > 0 && parts[lps[0]]) col = parts[lps[0]].color;
+      return { t: line.text, color: col, sz: optFs, bold: line.bold !== false };
     });
 
     let nextText = null;
@@ -1916,7 +1998,7 @@ function renderParts() {
         oninput="parts[${i}].name=this.value;renderBlocks();renderPartLegend()">
       <button class="btn-danger" onclick="removePart(${i})">✕</button>
     </div>`).join('');
-  document.getElementById('addPartBtn').style.display = parts.length >= 5 ? 'none' : 'block';
+  document.getElementById('addPartBtn').style.display = parts.length >= 10 ? 'none' : 'block';
   renderPartLegend();
 }
 
@@ -1927,15 +2009,15 @@ function renderPartLegend() {
 }
 
 function addPart() {
-  if (parts.length >= 5) return;
+  if (parts.length >= 10) return;
   parts.push({ name: `パート${String.fromCharCode(65+parts.length)}`, color: PART_PALETTE[parts.length] });
   renderParts(); renderBlocks();
 }
 
 function removePart(i) {
   blocks.forEach(b => b.lines.forEach(l => {
-    if (l.part === i) l.part = null;
-    else if (l.part !== null && l.part > i) l.part--;
+    if (!l.parts) l.parts = [];
+    l.parts = l.parts.filter(p => p !== i).map(p => p > i ? p - 1 : p);
   }));
   parts.splice(i, 1);
   renderParts(); renderBlocks();
@@ -2003,9 +2085,23 @@ function updatePreview() {
     const previewLines = chunk.length ? chunk : b.lines.filter(l => l.text.trim());
 
     pt.innerHTML = previewLines.map(l => {
+      const lps = l.parts || [];
       let col = text;
-      if (partsEnabled && l.part !== null && parts[l.part]) col = parts[l.part].color;
-      return `<span style="color:${col};display:block">${esc(l.text)}</span>`;
+      if (partsEnabled && lps.length > 0) {
+        if (partDisplayMode === 'bg') {
+          const p0 = parts[lps[0]];
+          const bgCol = p0 ? p0.color : text;
+          return `<span style="display:block;background:${bgCol};color:#000;font-weight:${l.bold!==false?700:400};border-radius:3px;margin:1px 0;padding:0 4px">${esc(l.text)}</span>`;
+        }
+        if (partDisplayMode === 'underline') {
+          const p0 = parts[lps[0]];
+          col = p0 ? p0.color : text;
+          return `<span style="display:block;color:${col};text-decoration:underline;font-weight:${l.bold!==false?700:400}">${esc(l.text)}</span>`;
+        }
+        // text mode
+        col = parts[lps[0]]?.color || text;
+      }
+      return `<span style="color:${col};display:block;font-weight:${l.bold!==false?700:400}">${esc(l.text)}</span>`;
     }).join('');
 
     // 次の歌詞プレビュー（次ブロックの最初の行）
@@ -2036,17 +2132,18 @@ function updatePreview() {
     // ── ブロックがまだない場合はダミー ──
     lbl.textContent = '';
     const ex = [
-      { text:'君の声が聞こえる', part:null },
-      { text:'遠い空の向こうから', part:0 },
-      { text:'涙が止まらない', part:1 },
+      { text:'君の声が聞こえる', parts:[] },
+      { text:'遠い空の向こうから', parts:[0] },
+      { text:'涙が止まらない', parts:[1] },
     ];
     if (partsEnabled && parts.length > 0) {
       pt.innerHTML = ex.map(l => {
-        const c = (l.part !== null && parts[l.part]) ? parts[l.part].color : text;
-        return `<span style="color:${c};display:block">${esc(l.text)}</span>`;
+        const lps = l.parts || [];
+        const c = lps.length > 0 && parts[lps[0]] ? parts[lps[0]].color : text;
+        return `<span style="color:${c};display:block;font-weight:700">${esc(l.text)}</span>`;
       }).join('');
     } else {
-      pt.innerHTML = `<span style="color:${text}">君の声が聞こえる<br>遠い空の向こうから<br>涙が止まらない</span>`;
+      pt.innerHTML = `<span style="color:${text};font-weight:700">君の声が聞こえる<br>遠い空の向こうから<br>涙が止まらない</span>`;
     }
     document.getElementById('prevNext').style.display = 'none';
     pt.style.marginTop = '0';
@@ -2200,7 +2297,7 @@ function parseLyrics() {
     const label = g.label || autoLabelBlock(idx, merged.length, fp, fpCounts);
     return {
       label,
-      lines: g.lines.map(t => ({ text: t, part: null })),
+      lines: g.lines.map(t => ({ text: t, parts: [], bold: true })),
       splitSlides: 1,
       splitPoints: [],
     };
@@ -2323,47 +2420,92 @@ function renderLinesHtml(bi) {
 }
 
 function buildLineRow(bi, li, line) {
-  const textColor = getLineDisplayColor(line.part);
-  const pills = partsEnabled ? buildPills(bi, li, line.part) : '';
-  const len   = [...(line.text || '')].length;
-  // 1スライド幅に収まる文字数目安（40pt時 ≈ 20文字、フォントサイズに依存）
-  const fs    = parseInt(document.getElementById('fontSize').value) || 40;
-  const maxCh = Math.max(8, Math.floor(883 / (fs * 1.333)));
-  const isLong = len > maxCh;
-  const badgeCls  = isLong ? 'warn' : 'ok';
-  const badgeTip  = isLong ? `${len}文字 — 分割推奨（目安${maxCh}文字以下）` : `${len}文字`;
+  const lineParts  = line.parts || [];
+  const isBold     = line.bold !== false; // デフォルト太字
+  const textColor  = getLineDisplayColor(lineParts);
+  const pills      = partsEnabled ? buildPills(bi, li, lineParts) : '';
+  const len        = [...(line.text || '')].length;
+  const fs         = parseInt(document.getElementById('fontSize').value) || 40;
+  const maxCh      = Math.max(8, Math.floor(883 / (fs * 1.333)));
+  const isLong     = len > maxCh;
+  const badgeCls   = isLong ? 'warn' : 'ok';
+  const badgeTip   = isLong ? `${len}文字 — 分割推奨（目安${maxCh}文字以下）` : `${len}文字`;
+
+  // エディタ上のスタイル表現
+  let inputStyle = `color:${textColor};`;
+  if (isBold) inputStyle += 'font-weight:700;';
+  if (partsEnabled && lineParts.length > 0) {
+    if (partDisplayMode === 'underline') {
+      // 複数パートは重ね下線をbox-shadowで表現
+      const shadows = lineParts.map((pi, idx) => {
+        const col = parts[pi]?.color || '#fff';
+        return `0 ${2 + idx * 3}px 0 ${col}`;
+      });
+      inputStyle += `text-decoration:underline;text-decoration-color:${parts[lineParts[0]]?.color};`;
+    } else if (partDisplayMode === 'bg') {
+      const col = parts[lineParts[0]]?.color || '#fff';
+      inputStyle += `background:${col};color:#000;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;border-radius:4px;padding-left:6px;padding-right:6px;`;
+    }
+  }
 
   return `<div class="line-row" id="lr-${bi}-${li}">
     ${pills ? `<div class="part-pills">${pills}</div>` : ''}
     <input class="line-text-input" type="text"
       value="${esc(line.text)}"
-      style="color:${textColor}"
+      style="${inputStyle}"
       oninput="blocks[${bi}].lines[${li}].text=this.value;updateLineLenBadge(${bi},${li})"
       onfocus="setActiveBlock(${bi})"
       onkeydown="if(event.key==='Enter'){event.preventDefault();splitLineAtCursor(${bi},${li},this)}"
       placeholder="歌詞を入力...">
     <span class="line-len-badge ${badgeCls}" id="llb-${bi}-${li}" title="${badgeTip}">${len}</span>
+    <button class="line-bold-btn ${isBold ? 'active' : ''}"
+      title="${isBold ? '太字（クリックで標準）' : '標準（クリックで太字）'}"
+      onclick="toggleLineBold(${bi},${li})"><b>B</b></button>
     <button class="line-split-btn" title="カーソル位置で行を分割（Enterキーでも可）"
       onclick="splitLineAtCursor(${bi},${li},document.querySelector('#lr-${bi}-${li} .line-text-input'))">↵</button>
     <button class="line-del-btn" onclick="removeLine(${bi},${li})">✕</button>
   </div>`;
 }
 
-function buildPills(bi, li, currentPart) {
-  let h = `<button class="part-pill pill-all ${currentPart===null?'active':''}"
-    onclick="setLinePart(${bi},${li},null)" title="全員">全</button>`;
+function buildPills(bi, li, lineParts) {
+  const ps = lineParts || [];
+  const allActive = ps.length === 0;
+  let h = `<button class="part-pill pill-all ${allActive ? 'active' : ''}"
+    onclick="toggleLinePart(${bi},${li},null)" title="全員（クリアしてデフォルト）">全</button>`;
   parts.forEach((p, pi) => {
-    h += `<button class="part-pill pill-part ${currentPart===pi?'active':''}"
+    const isActive = ps.includes(pi);
+    h += `<button class="part-pill pill-part ${isActive ? 'active' : ''}"
       style="background:${p.color}"
-      onclick="setLinePart(${bi},${li},${pi})"
+      onclick="toggleLinePart(${bi},${li},${pi})"
       title="${esc(p.name)}">${String.fromCharCode(65+pi)}</button>`;
   });
   return h;
 }
 
-function getLineDisplayColor(partIdx) {
-  if (!partsEnabled || partIdx === null || !parts[partIdx]) return document.getElementById('textColor').value;
-  return parts[partIdx].color;
+function getLineDisplayColor(lineParts) {
+  const ps = lineParts || [];
+  if (!partsEnabled || ps.length === 0) return document.getElementById('textColor').value;
+  // 複数パートの場合は最初のパートの色を返す（エディタ表示用）
+  return parts[ps[0]]?.color || document.getElementById('textColor').value;
+}
+
+// 複数パートのトグル（クリックで追加、もう一度クリックで削除）
+function toggleLinePart(bi, li, partIdx) {
+  syncLineText(bi, li);
+  const line = blocks[bi].lines[li];
+  if (!line.parts) line.parts = [];
+  if (partIdx === null) {
+    // 「全」ボタン → クリア
+    line.parts = [];
+  } else {
+    const idx = line.parts.indexOf(partIdx);
+    if (idx === -1) line.parts.push(partIdx);
+    else line.parts.splice(idx, 1);
+  }
+  line.parts.sort((a,b)=>a-b);
+  const row = document.getElementById(`lr-${bi}-${li}`);
+  if (row) row.outerHTML = buildLineRow(bi, li, line);
+  updatePreview();
 }
 
 // ═══════════════════════════════════════════════
@@ -2415,14 +2557,14 @@ function rerenderLines(bi) {
   while (tmp.firstChild) linesDiv.insertBefore(tmp.firstChild, addBtn);
 }
 
-function setLinePart(bi, li, partIdx) {
+// 行ごとの太字トグル
+function toggleLineBold(bi, li) {
   syncLineText(bi, li);
-  blocks[bi].lines[li].part = partIdx;
+  const line = blocks[bi].lines[li];
+  line.bold = line.bold === false; // false→true, true→false
   const row = document.getElementById(`lr-${bi}-${li}`);
-  if (row) row.outerHTML = buildLineRow(bi, li, blocks[bi].lines[li]);
+  if (row) row.outerHTML = buildLineRow(bi, li, line);
 }
-
-function syncLineText(bi, li) {
   const el = document.querySelector(`#lr-${bi}-${li} .line-text-input`);
   if (el) blocks[bi].lines[li].text = el.value;
 }
@@ -2441,9 +2583,10 @@ function splitLineAtCursor(bi, li, inputEl) {
   const after  = text.slice(splitAt).trimStart();
 
   // 元の行を前半に置き換え、後半を次の行として挿入
-  const part = blocks[bi].lines[li].part;
+  const partsCopy = blocks[bi].lines[li].parts ? [...blocks[bi].lines[li].parts] : [];
+  const boldVal   = blocks[bi].lines[li].bold !== false;
   blocks[bi].lines[li].text = before;
-  blocks[bi].lines.splice(li + 1, 0, { text: after, part });
+  blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal });
 
   // splitPoints補正：li+1以降のインデックスを+1
   blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
@@ -2476,7 +2619,7 @@ function updateLineLenBadge(bi, li) {
 }
 
 function addLine(bi) {
-  blocks[bi].lines.push({text:'',part:null});
+  blocks[bi].lines.push({text:'', parts:[], bold:true});
   const li = blocks[bi].lines.length - 1;
   // splitPointsの調整不要（末尾追加なので既存インデックスに影響なし）
   rerenderLines(bi);
