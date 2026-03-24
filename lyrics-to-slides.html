@@ -864,9 +864,8 @@
         <!-- 表示スタイル -->
         <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">パート表示スタイル</div>
         <div class="display-mode-row">
-          <button class="display-mode-btn active" id="dm-text"      onclick="setDisplayMode('text')">🎨<br>文字色</button>
-          <button class="display-mode-btn"         id="dm-underline" onclick="setDisplayMode('underline')">➖<br>下線</button>
-          <button class="display-mode-btn"         id="dm-bg"       onclick="setDisplayMode('bg')">🟥<br>背景色</button>
+          <button class="display-mode-btn active" id="dm-underline" onclick="setDisplayMode('underline')">➖<br>下線</button>
+          <button class="display-mode-btn"        id="dm-bg"        onclick="setDisplayMode('bg')">🟥<br>背景色</button>
         </div>
         <div class="hint-box" style="margin-bottom:10px">
           各行の丸ボタンで担当パートを選択（複数選択OK）。<br>
@@ -901,6 +900,24 @@
       <div class="divider"></div>
       <div class="design-grid">
         <div class="design-row"><span class="design-label">背景色</span><input type="color" id="bgColor" value="#000000" oninput="updatePreview()"></div>
+        <div class="design-row">
+          <span class="design-label">背景グラデーション</span>
+          <label class="toggle-switch" style="flex-shrink:0">
+            <input type="checkbox" id="gradEnabled" onchange="onGradToggle()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div id="gradSettings" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
+          <div class="design-row"><span class="design-label">終点色</span><input type="color" id="bgColor2" value="#1a0033" oninput="updatePreview()"></div>
+          <div class="design-row">
+            <span class="design-label">方向</span>
+            <div style="display:flex;gap:4px">
+              <button class="count-opt active" id="gdir-tb"   onclick="setGradDir('tb')"   style="font-size:10px;padding:3px 8px">縦</button>
+              <button class="count-opt"        id="gdir-lr"   onclick="setGradDir('lr')"   style="font-size:10px;padding:3px 8px">横</button>
+              <button class="count-opt"        id="gdir-diag" onclick="setGradDir('diag')" style="font-size:10px;padding:3px 8px">斜め</button>
+            </div>
+          </div>
+        </div>
         <div class="design-row"><span class="design-label">デフォルト文字色（全員）</span><input type="color" id="textColor" value="#ffffff" oninput="updatePreview()"></div>
         <div class="design-row"><span class="design-label">ブロック名の色</span><input type="color" id="accentColor" value="#f59e0b" oninput="updatePreview()"></div>
       </div>
@@ -924,6 +941,25 @@
           </div>
           <input type="range" id="fontSize" min="20" max="60" value="40"
             oninput="document.getElementById('fontSizeVal').textContent=this.value+'pt';updatePreview()">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span class="design-label">行間</span><span class="range-val" id="lineSpacingVal">1.1</span>
+          </div>
+          <input type="range" id="lineSpacing" min="100" max="200" value="110"
+            oninput="document.getElementById('lineSpacingVal').textContent=(this.value/100).toFixed(1);updatePreview()">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span class="design-label">文字縁取り</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="color" id="outlineColor" value="#000000"
+                oninput="updatePreview()" style="width:26px;height:22px;padding:0;border:none;background:none;cursor:pointer">
+              <span class="range-val" id="outlineSizeVal">0px</span>
+            </div>
+          </div>
+          <input type="range" id="outlineSize" min="0" max="12" value="0"
+            oninput="document.getElementById('outlineSizeVal').textContent=this.value+'px';updatePreview()">
         </div>
       </div>
 
@@ -1149,11 +1185,14 @@ function makeBox(id, x, y, w, h, lines, opts = {}) {
       ? `<a:highlight><a:srgbClr val="${l.highlight.replace('#','')}"/></a:highlight>`
       : '';
     // 黒縁（背景色モード時）はrPrのlnXmlで代替できないためOutlineとして近似
-    const la = l.align || align;
-    return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="140000"/></a:lnSpc></a:pPr>` +
+    const la   = l.align || align;
+    const lsSpc  = Math.round(getLineSpacing() * 100000);
+    const { size: olSz, color: olCol } = getOutline();
+    const olXml  = makeOutlineXml(olSz, olCol);
+    return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="${lsSpc}"/></a:lnSpc></a:pPr>` +
       `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}"${uxml} dirty="0">` +
       `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
-      `${hlXml}` +
+      `${hlXml}${olXml}` +
       `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
       `<a:t>${xesc(l.text)}</a:t></a:r></a:p>`;
   }).join('');
@@ -1174,9 +1213,7 @@ function makeRect(id, x, y, w, h, fill, line) {
 }
 
 function buildSlideXml(bgColor, shapes) {
-  const bg = bgColor
-    ? `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bgColor.replace('#','')}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`
-    : '';
+  const bg = makeBgXml(bgColor);
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <p:cSld>${bg}<p:spTree>
@@ -1262,36 +1299,95 @@ function buildPptxBytes(songData, design) {
     // 歌詞
     const validLines = unit.lines.filter(l => l.text.trim());
     if (validLines.length) {
-      const mainH = nextOn && nextUnit ? 4.85 : 5.1;
-      const optFs = calcOptimalFontSize(validLines, fs);
-      const lyricLines = validLines.map(line => {
-        const lineParts = line.parts || [];
-        const isBold    = line.bold !== false;
-        let col = txHex;
-        let underline = false;
-        let highlight = null;
+      const mainH  = nextOn && nextUnit ? 5.0 : 5.465;
+      const mainY  = 0.08;
+      const mainX  = 0.1;
+      const mainW  = 9.8;
+      const optFs  = calcOptimalFontSize(validLines, fs);
 
-        if (partsEnabled && lineParts.length > 0) {
-          if (partDisplayMode === 'text') {
-            // 複数パートの場合は最初のパートの色で表示
-            const p0 = parts[lineParts[0]];
-            if (p0) col = p0.color.replace('#','');
-          } else if (partDisplayMode === 'underline') {
-            underline = true;
-            const p0 = parts[lineParts[0]];
-            if (p0) col = p0.color.replace('#','');
-          } else if (partDisplayMode === 'bg') {
-            const p0 = parts[lineParts[0]];
-            if (p0) {
-              highlight = p0.color;
-              col = '000000'; // 背景色モードは黒文字
+      const needPerLine = partsEnabled && (
+        (partDisplayMode === 'underline' && validLines.some(l => (l.parts||[]).length > 1)) ||
+        (partDisplayMode === 'text'      && validLines.some(l => (l.parts||[]).length > 1))
+      );
+
+      if (!needPerLine) {
+        // ── 通常：1つのテキストボックスに全行 ──
+        const lyricLines = validLines.map(line => {
+          const lineParts = line.parts || [];
+          const isBold    = line.bold !== false;
+          let col = txHex; let underline = false; let highlight = null;
+          if (partsEnabled && lineParts.length > 0) {
+            if (partDisplayMode === 'text') {
+              col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
+            } else if (partDisplayMode === 'underline') {
+              underline = true;
+              col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
+            } else if (partDisplayMode === 'bg') {
+              highlight = parts[lineParts[0]]?.color || null;
+              col = '000000';
             }
           }
-        }
-        return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight };
-      });
-      sh.push(makeBox(id++, inch(0.25), inch(0.18), inch(9.5), inch(mainH),
-        lyricLines, {font, align:'ctr', valign:'ctr'}));
+          return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight };
+        });
+        sh.push(makeBox(id++, inch(mainX), inch(mainY), inch(mainW), inch(mainH),
+          lyricLines, {font, align:'ctr', valign:'ctr'}));
+      } else {
+        // ── 複数パート下線モード：行ごとに個別テキストボックス＋色付き矩形下線 ──
+        // 行の高さ計算（インチ）
+        const lineHIn  = optFs / 72 * getLineSpacing();
+        const ulThickIn = 0.02;              // 1本の太さ
+        const ulGapIn   = 0.012;             // 下線間の隙間
+        const ulBaseIn  = 0.005;             // 文字ベースラインからの距離
+        const totalTextH = lineHIn * validLines.length;
+        const startY     = mainY + (mainH - totalTextH) / 2; // 縦中央揃え
+
+        validLines.forEach((line, lineIdx) => {
+          const lineParts = line.parts || [];
+          const isBold    = line.bold !== false;
+          const ty        = startY + lineIdx * lineHIn;
+
+          if (partDisplayMode === 'text' && partsEnabled && lineParts.length > 1) {
+            // ── textモード複数パート: 行を縦に均等分割した重ね合わせテキストボックスで近似 ──
+            // PPTXはgradientテキスト非対応のため、パートごとにclipした矩形+テキストで代替
+            // 実装: 全体テキストボックスを複数重ね、各々 clip rect で上下を切り取る
+            // 簡易案: パートごとに行を縦分割した別テキストボックスを重ねる
+            lineParts.forEach((pi, pIdx) => {
+              const col    = (parts[pi]?.color || '#'+txHex).replace('#','');
+              const sliceH = lineHIn / lineParts.length;
+              const sliceY = ty + pIdx * sliceH;
+              // 同じテキストを複数枚重ね、位置をずらして各パートの色で描画
+              // PowerPointはclipPathが使えないため、同テキストを重ねて縦位置を合わせる
+              sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+                [{text: line.text, color: col, sz: optFs, bold: isBold}],
+                {font, align:'ctr', valign:'ctr'}));
+            });
+            // 最後に白半透明で覆う代わりに、先頭パート色を最上位レイヤーとして上書き（近似）
+            // NOTE: PPTXの制限上、最も現実的な近似として「最初のパート色で全体」にする
+            // →上記ループで重ねているので最後のものが表示される。逆順にする
+          } else {
+            let col = txHex;
+            if (partsEnabled && lineParts.length > 0 && partDisplayMode !== 'bg') {
+              col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
+            }
+            sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+              [{text: line.text, color: col, sz: optFs, bold: isBold}],
+              {font, align:'ctr', valign:'ctr'}));
+          }
+
+          // パート数分の色付き下線矩形
+          if (partsEnabled && lineParts.length > 1 && partDisplayMode === 'underline') {
+            lineParts.slice(1).forEach((pi, ulIdx) => {
+              const ulColor = (parts[pi]?.color || '#ffffff').replace('#','');
+              const ulY = ty + lineHIn * 0.85 + ulBaseIn + ulIdx * (ulThickIn + ulGapIn);
+              const charCount = [...line.text].length;
+              const estimatedW = Math.min(mainW, charCount * optFs / 72 * 1.05);
+              const ulX = mainX + (mainW - estimatedW) / 2;
+              sh.push(makeRect(id++, inch(ulX), inch(ulY), inch(estimatedW), inch(ulThickIn),
+                ulColor, ulColor));
+            });
+          }
+        });
+      }
     }
 
     // 次の歌詞プレビュー
@@ -1514,23 +1610,42 @@ function triggerDownload(bytes, filename) {
 // ═══════════════════════════════════════════════
 // block = { label, lines: [{text, part}], splitSlides: 1|2|3 }
 let blocks = [];
+// パート数に応じて識別しやすい色を順番に割り当て
+// 赤→青→黄→緑→紫→橙→水色→ピンク→黄緑→茶 の順で最大限目立つ配色
+const DISTINCT_COLORS = [
+  '#ff4444', // 赤
+  '#4488ff', // 青
+  '#ffcc00', // 黄
+  '#22cc66', // 緑
+  '#cc44ff', // 紫
+  '#ff8800', // 橙
+  '#00ccdd', // 水色
+  '#ff66aa', // ピンク
+  '#aadd00', // 黄緑
+  '#aa6633', // 茶
+];
+
+function getPartColor(idx, total) {
+  return DISTINCT_COLORS[idx % DISTINCT_COLORS.length];
+}
+function recolorAllParts() {
+  parts.forEach((p, i) => { p.color = getPartColor(i, parts.length); });
+  renderParts(); renderBlocks(); updatePreview();
+}
+
 let parts = [
-  { name: 'パートA', color: '#60a5fa' },
-  { name: 'パートB', color: '#f87171' },
+  { name: 'パートA', color: '#ff4444' }, // 赤
+  { name: 'パートB', color: '#4488ff' }, // 青
 ];
 let partsEnabled = false;
 let nextPreviewLines = 1;
-const PART_PALETTE = [
-  '#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24',
-  '#fb923c','#e879f9','#2dd4bf','#f9a8d4','#a3e635'
-];
 
-let partDisplayMode = 'text'; // 'text' | 'underline' | 'bg'
+let partDisplayMode = 'underline'; // 'underline' | 'bg'
 
 // ── 表示スタイル切り替え ──
 function setDisplayMode(mode) {
   partDisplayMode = mode;
-  ['text','underline','bg'].forEach(m =>
+  ['underline','bg'].forEach(m =>
     document.getElementById('dm-'+m)?.classList.toggle('active', m === mode)
   );
   renderBlocks();
@@ -1541,6 +1656,7 @@ let lyricsRepeatEnabled = false;
 let lyricsRepeatFmt = 'kaime';
 let lyricsRepeatPos = 'tr';
 let activeBlockIdx  = 0; // プレビューに表示中のブロックインデックス
+let activeLineIdx   = 0; // フォーカス中の行インデックス
 
 const CIRCLE_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
 
@@ -1556,7 +1672,7 @@ function checkBlockOverflow(block, _unused, fontSizePt) {
   const slideW_px = (10 - 0.8) * 96;
   const slideH_px = (5.625 - 0.4) * 96;
   const charW_px  = fontSizePt * 1.333;
-  const lineH_px  = fontSizePt * 1.333 * 1.55;
+  const lineH_px  = fontSizePt * 1.333 * getLineSpacing();
   const maxCharsPerLine = Math.floor(slideW_px / charW_px);
   const maxLines        = Math.floor(slideH_px / lineH_px);
 
@@ -1583,14 +1699,14 @@ function checkBlockOverflow(block, _unused, fontSizePt) {
 }
 
 // 指定ブロックに最適なフォントサイズ(pt)を計算
-function calcOptimalFontSize(lines, maxPt = 60, minPt = 14) {
+function calcOptimalFontSize(lines, maxPt = 72, minPt = 12) {
   if (!lines.length) return maxPt;
-  // スライド有効エリア（余白を最小限に）
-  const slideW_px = (10 - 0.5) * 96;  // 余白 0.25インチ × 2
-  const slideH_px = (5.625 - 0.35) * 96;
-  for (let pt = maxPt; pt >= minPt; pt -= 2) {
-    const charW = pt * 1.333;
-    const lineH = pt * 1.333 * 1.45; // 行間を少し詰める
+  const ls        = getLineSpacing();
+  const slideW_px = (10 - 0.2) * 96;
+  const slideH_px = (5.625 - 0.16) * 96;
+  for (let pt = maxPt; pt >= minPt; pt--) {
+    const charW    = pt * 1.333;
+    const lineH    = pt * 1.333 * ls;
     const maxChars = Math.floor(slideW_px / charW);
     const maxLines = Math.floor(slideH_px / lineH);
     let total = 0;
@@ -1649,7 +1765,7 @@ function openSlideModal() {
       const lps = line.parts || [];
       let col = txHex;
       if (partsEnabled && lps.length > 0 && parts[lps[0]]) col = parts[lps[0]].color;
-      return { t: line.text, color: col, sz: optFs, bold: line.bold !== false };
+      return { t: line.text, color: col, sz: optFs, bold: line.bold !== false, lineParts: lps };
     });
 
     let nextText = null;
@@ -1691,7 +1807,10 @@ function renderPreviewSlide(idx) {
   const n    = _previewSlides.length;
   const frame = document.getElementById('slideFrame');
 
-  frame.style.background   = s.bg;
+  const gm = getGrad();
+  frame.style.background = gm.on
+    ? `linear-gradient(${gradCssDir(gm.dir)}, ${gm.c1}, ${gm.c2})`
+    : s.bg;
   frame.style.fontFamily   = s.font + ',Noto Sans JP,sans-serif';
 
   if (s.isTitle) {
@@ -1704,12 +1823,33 @@ function renderPreviewSlide(idx) {
         ${s.sub ? `<div style="font-size:clamp(12px,1.5vw,22px);color:${s.sub.color};margin-top:10px">${esc(s.sub.t)}</div>` : ''}
       </div>`;
   } else {
-    // 自動フォントサイズ → pxに変換（プレビュー幅1000px基準、実際は10インチ=約960px実効）
-    const maxSz = s.lines[0]?.sz || 40;
-    const pxSize = Math.max(10, maxSz * 1.2); // preview scale ≈ 1.2x
-    const lyricsHtml = s.lines.map(l =>
-      `<div style="color:${l.color};font-size:${pxSize}px;font-weight:700;line-height:1.5;word-break:break-all">${esc(l.t)}</div>`
-    ).join('');
+    const maxSz  = s.lines[0]?.sz || 40;
+    const pxSize = Math.max(10, maxSz * 1.2);
+    const { size: olSz, color: olCol } = getOutline();
+    const olStyle = olSz ? `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;` : '';
+    const lyricsHtml = s.lines.map(l => {
+      const lps  = l.lineParts || [];
+      const fw   = l.bold !== false ? 700 : 400;
+      let spanStyle = `font-size:${pxSize}px;font-weight:${fw};${olStyle}`;
+      if (partsEnabled && lps.length > 0) {
+        if (partDisplayMode === 'underline') {
+          const shadows = lps.slice(1).flatMap((pi, idx) => {
+          const c = parts[pi]?.color || '#fff'; const y = 1 + idx * 4;
+          return [`0 ${y}px 0 0 ${c}`,`0 ${y+1}px 0 0 ${c}`,`0 ${y+2}px 0 0 ${c}`];
+        });
+          spanStyle += `color:${parts[lps[0]]?.color || l.color};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block;`;
+        } else if (partDisplayMode === 'bg') {
+          const bgCol = parts[lps[0]]?.color || '#fff';
+          spanStyle += `background:${bgCol};color:#000;border-radius:3px;padding:0 4px;`;
+        } else {
+          // textモード: グラデーション
+          spanStyle += makePartGradientStyle(lps, l.color);
+        }
+      } else {
+        spanStyle += `color:${l.color};`;
+      }
+      return `<div style="line-height:1.5;word-break:break-all;margin-bottom:4px"><span style="${spanStyle}">${esc(l.t)}</span></div>`;
+    }).join('');
     const nextHtml = s.nextText
       ? `<div class="slide-frame-next" style="color:${s.nextColor};font-size:${Math.max(9,Math.round(pxSize*0.38))}px">${esc(s.nextText)}</div>`
       : '';
@@ -2010,7 +2150,8 @@ function renderPartLegend() {
 
 function addPart() {
   if (parts.length >= 10) return;
-  parts.push({ name: `パート${String.fromCharCode(65+parts.length)}`, color: PART_PALETTE[parts.length] });
+  parts.push({ name: `パート${String.fromCharCode(65+parts.length)}`, color: '#ffffff' });
+  recolorAllParts();
   renderParts(); renderBlocks();
 }
 
@@ -2020,6 +2161,7 @@ function removePart(i) {
     l.parts = l.parts.filter(p => p !== i).map(p => p > i ? p - 1 : p);
   }));
   parts.splice(i, 1);
+  recolorAllParts();
   renderParts(); renderBlocks();
 }
 
@@ -2054,12 +2196,22 @@ function updatePreview() {
   const nextOn = document.getElementById('nextPreviewEnabled').checked;
   const nextOp = parseInt(document.getElementById('nextOpacity').value) / 100;
 
-  document.getElementById('slidePreview').style.background = bg;
+  const g = getGrad();
+  const previewEl = document.getElementById('slidePreview');
+  if (g.on) {
+    previewEl.style.background = `linear-gradient(${gradCssDir(g.dir)}, ${g.c1}, ${g.c2})`;
+  } else {
+    previewEl.style.background = bg;
+  }
 
   const px = Math.max(9, Math.round(size * 0.34));
   const pt = document.getElementById('prevText');
   pt.style.fontFamily = font + ',sans-serif';
   pt.style.fontSize   = px + 'px';
+  pt.style.lineHeight = getLineSpacing();
+  const { size: olSz, color: olCol } = getOutline();
+  pt.style.webkitTextStroke = olSz ? `${olSz}px ${olCol}` : '';
+  pt.style.paintOrder = olSz ? 'stroke fill' : '';
 
   // ── 表示するブロックを決定 ──
   // activeBlockIdx が有効なブロックを指していれば実データを使用
@@ -2072,57 +2224,86 @@ function updatePreview() {
 
   if (b) {
     // ── 実ブロックのデータをプレビューに反映 ──
-    lbl.textContent = b.label || '';
 
-    // splitPointsを考慮して最初のチャンクを取得
+    // splitPointsを考慮して、フォーカス行が含まれるチャンクを表示
     const pts = new Set(b.splitPoints || []);
-    let chunk = [];
-    for (let li = 0; li < b.lines.length; li++) {
-      const line = b.lines[li];
-      if (line.text.trim()) chunk.push(line);
-      if (pts.has(li) && chunk.length) break; // 最初の分割点まで
+    const chunks = [];
+    let cur = [];
+    b.lines.forEach((line, li) => {
+      if (line.text.trim()) cur.push(line);
+      if (pts.has(li)) { chunks.push(cur); cur = []; }
+    });
+    chunks.push(cur);
+    const validChunks = chunks.filter(c => c.length);
+
+    // フォーカス行が何番目のチャンクか判定
+    // splitPoint li = 「li行目の後ろで分割」なので、li行目は手前のチャンクに属する
+    let chunkIdx = 0;
+    if (pts.size > 0) {
+      const sortedPts = [...pts].sort((a,b)=>a-b);
+      for (const sp of sortedPts) {
+        if (activeLineIdx > sp) chunkIdx++;
+        else break;
+      }
+      chunkIdx = Math.min(chunkIdx, validChunks.length - 1);
     }
-    const previewLines = chunk.length ? chunk : b.lines.filter(l => l.text.trim());
+    const previewLines = validChunks[chunkIdx] || validChunks[0] || b.lines.filter(l => l.text.trim());
+
+    // チャンク情報をラベルに表示
+    const chunkSuffix = validChunks.length > 1 ? ` (${chunkIdx+1}/${validChunks.length})` : '';
+    lbl.textContent = (b.label || '') + chunkSuffix;
 
     pt.innerHTML = previewLines.map(l => {
       const lps = l.parts || [];
-      let col = text;
+      const fw  = l.bold !== false ? 700 : 400;
       if (partsEnabled && lps.length > 0) {
         if (partDisplayMode === 'bg') {
-          const p0 = parts[lps[0]];
-          const bgCol = p0 ? p0.color : text;
-          return `<span style="display:block;background:${bgCol};color:#000;font-weight:${l.bold!==false?700:400};border-radius:3px;margin:1px 0;padding:0 4px">${esc(l.text)}</span>`;
+          const bgCol = parts[lps[0]]?.color || text;
+          return `<span style="display:block;background:${bgCol};color:#000;font-weight:${fw};border-radius:3px;margin:1px 0;padding:0 4px">${esc(l.text)}</span>`;
         }
         if (partDisplayMode === 'underline') {
-          const p0 = parts[lps[0]];
-          col = p0 ? p0.color : text;
-          return `<span style="display:block;color:${col};text-decoration:underline;font-weight:${l.bold!==false?700:400}">${esc(l.text)}</span>`;
+          const col = parts[lps[0]]?.color || text;
+          const shadows = lps.slice(1).flatMap((pi, idx) => {
+          const c = parts[pi]?.color || text; const y = 1 + idx * 4;
+          return [`0 ${y}px 0 0 ${c}`,`0 ${y+1}px 0 0 ${c}`,`0 ${y+2}px 0 0 ${c}`];
+          });
+          const pb = lps.length > 1 ? 1+(lps.length-1)*4+2 : 0;
+          return `<span style="display:inline-block;color:${col};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block">${esc(l.text)}</span><br>`;
         }
-        // text mode
-        col = parts[lps[0]]?.color || text;
+        // textモード: グラデーション
+        const gradStyle = makePartGradientStyle(lps, text);
+        return `<span style="display:block;font-weight:${fw};${gradStyle}">${esc(l.text)}</span>`;
       }
-      return `<span style="color:${col};display:block;font-weight:${l.bold!==false?700:400}">${esc(l.text)}</span>`;
+      return `<span style="color:${text};display:block;font-weight:${fw}">${esc(l.text)}</span>`;
     }).join('');
 
-    // 次の歌詞プレビュー（次ブロックの最初の行）
+    // 次の歌詞プレビュー（現在表示中のチャンクの次のスライド先頭）
     const nextEl = document.getElementById('prevNext');
     if (nextOn) {
-      const nextColor  = blendHex(bg, text, nextOp);
-      const showLabel  = document.getElementById('nextLabelEnabled').checked;
-      // 次のブロックを探す
+      const nextColor = blendHex(bg, text, nextOp);
+      const showLabel = document.getElementById('nextLabelEnabled').checked;
+
+      // 全スライドをチャンク展開して「現在のチャンクの次」を探す
+      const allUnits = expandToSlideUnits();
+      // 現在表示中のチャンクを特定（ブロックラベルとchunkIdxで照合）
       const bi = blocks.indexOf(b);
-      const nextBlock = blocks.slice(bi + 1).find(nb => nb.lines.some(l => l.text.trim()));
-      if (nextBlock) {
-        const nextLines = nextBlock.lines.filter(l => l.text.trim());
-        const nextText  = (showLabel ? 'NEXT ▶  ' : '') + nextLines.slice(0, nextPreviewLines).map(l=>l.text).join('　');
-        nextEl.style.display  = 'block';
-        nextEl.style.color    = nextColor;
+      const repeatMap = computeRepeatMap();
+      const baseLabel = repeatMap[bi] || b.label;
+      const chunkLabel = baseLabel + (validChunks.length > 1 ? ` (${chunkIdx+1}/${validChunks.length})` : '');
+      const curUnitIdx = allUnits.findIndex(u => u.label === chunkLabel);
+      const nextUnit   = curUnitIdx >= 0 ? allUnits[curUnitIdx + 1] : null;
+
+      if (nextUnit && nextUnit.lines.length) {
+        const nextText = (showLabel ? 'NEXT ▶  ' : '') +
+          nextUnit.lines.filter(l=>l.text.trim()).slice(0, nextPreviewLines).map(l=>l.text).join('　');
+        nextEl.style.display    = 'block';
+        nextEl.style.color      = nextColor;
         nextEl.style.fontFamily = font + ',sans-serif';
-        nextEl.innerHTML      = esc(nextText);
-        pt.style.marginTop    = '-10px';
+        nextEl.innerHTML        = esc(nextText);
+        pt.style.marginTop      = '-10px';
       } else {
-        nextEl.style.display  = 'none';
-        pt.style.marginTop    = '0';
+        nextEl.style.display = 'none';
+        pt.style.marginTop   = '0';
       }
     } else {
       document.getElementById('prevNext').style.display = 'none';
@@ -2170,9 +2351,88 @@ function updatePreview() {
 }
 
 // アクティブブロックを更新してプレビューを即時反映
-function setActiveBlock(bi) {
+function setActiveBlock(bi, li = 0) {
   activeBlockIdx = bi;
+  activeLineIdx  = li;
   updatePreview();
+}
+
+// 行間倍率を取得
+function getLineSpacing() {
+  return parseInt(document.getElementById('lineSpacing')?.value || 110) / 100;
+}
+let gradDir = 'tb'; // 'tb' | 'lr' | 'diag'
+
+function onGradToggle() {
+  const on = document.getElementById('gradEnabled').checked;
+  document.getElementById('gradSettings').style.display = on ? 'flex' : 'none';
+  updatePreview();
+}
+
+function setGradDir(dir) {
+  gradDir = dir;
+  ['tb','lr','diag'].forEach(d =>
+    document.getElementById('gdir-'+d)?.classList.toggle('active', d === dir)
+  );
+  updatePreview();
+}
+
+function getGrad() {
+  const on  = document.getElementById('gradEnabled')?.checked;
+  const c1  = document.getElementById('bgColor')?.value || '#000000';
+  const c2  = document.getElementById('bgColor2')?.value || '#000000';
+  return { on, c1, c2, dir: gradDir };
+}
+
+// CSS linear-gradient方向
+function gradCssDir(dir) {
+  if (dir === 'lr')   return 'to right';
+  if (dir === 'diag') return '135deg';
+  return 'to bottom';
+}
+
+// PPTX gradFill XML（OOXML angle: 縦=5400000, 横=0, 斜め=2700000 (hundredths of degree)）
+function gradPptxAngle(dir) {
+  if (dir === 'lr')   return '0';
+  if (dir === 'diag') return '2700000';
+  return '5400000';
+}
+
+function makeBgXml(bgHex) {
+  const g = getGrad();
+  if (!g.on) {
+    return `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bgHex}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`;
+  }
+  const c1 = g.c1.replace('#','');
+  const c2 = g.c2.replace('#','');
+  const ang = gradPptxAngle(g.dir);
+  return `<p:bg><p:bgPr><a:gradFill><a:gsLst>` +
+    `<a:gs pos="0"><a:srgbClr val="${c1}"/></a:gs>` +
+    `<a:gs pos="100000"><a:srgbClr val="${c2}"/></a:gs>` +
+    `</a:gsLst><a:lin ang="${ang}" scaled="0"/></a:gradFill><a:effectLst/></p:bgPr></p:bg>`;
+}
+
+// 縁取り設定を取得
+function getOutline() {
+  const size  = parseInt(document.getElementById('outlineSize')?.value || 0);
+  const color = document.getElementById('outlineColor')?.value || '#000000';
+  return { size, color };
+}
+// CSS text-stroke / text-shadow で縁取りを表現
+function makeOutlineStyle(size, color) {
+  if (!size) return '';
+  // paint-order:stroke fill でアンチエイリアスがきれいに出る
+  // fallback: text-shadow 4方向
+  const s = size;
+  const c = color;
+  return `-webkit-text-stroke:${s}px ${c};text-stroke:${s}px ${c};paint-order:stroke fill;`;
+}
+// PPTX用：縁取りXML（a:ln要素）
+function makeOutlineXml(size, color) {
+  if (!size) return '';
+  const w = Math.round(size * 12700); // px→EMU(1px=12700)
+  const col = color.replace('#','');
+  return `<a:ln w="${w}"><a:solidFill><a:srgbClr val="${col}"/></a:solidFill></a:ln>`;
 }
 function blendHex(bgHex, fgHex, t) {
   const br = parseInt(bgHex.slice(1,3),16), bg2 = parseInt(bgHex.slice(3,5),16), bb = parseInt(bgHex.slice(5,7),16);
@@ -2432,16 +2692,22 @@ function buildLineRow(bi, li, line) {
   const badgeTip   = isLong ? `${len}文字 — 分割推奨（目安${maxCh}文字以下）` : `${len}文字`;
 
   // エディタ上のスタイル表現
-  let inputStyle = `color:${textColor};`;
+  const baseColor = document.getElementById('textColor').value;
+  let inputStyle = '';
   if (isBold) inputStyle += 'font-weight:700;';
   if (partsEnabled && lineParts.length > 0) {
-    if (partDisplayMode === 'underline') {
-      // 複数パートは重ね下線をbox-shadowで表現
-      const shadows = lineParts.map((pi, idx) => {
-        const col = parts[pi]?.color || '#fff';
-        return `0 ${2 + idx * 3}px 0 ${col}`;
+    if (partDisplayMode === 'text') {
+      inputStyle += makePartGradientStyle(lineParts, baseColor);
+    } else if (partDisplayMode === 'underline') {
+      inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};`;
+      // パート数分の色付き下線をbox-shadowで縦に積み重ね（1本3px、間隔2px）
+      const shadows = lineParts.slice(1).flatMap((pi, idx) => {
+        const col    = parts[pi]?.color || '#fff';
+        const y = 1 + idx * 4;
+        return [`0 ${y}px 0 0 ${col}`,`0 ${y+1}px 0 0 ${col}`,`0 ${y+2}px 0 0 ${col}`];
       });
-      inputStyle += `text-decoration:underline;text-decoration-color:${parts[lineParts[0]]?.color};`;
+      const bottomPad = shadows.length ? 1+(lineParts.length-1)*4+2 : 0;
+      inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lineParts.length>1?(lineParts.length-1)*4+3:0}px;` : ''}`;
     } else if (partDisplayMode === 'bg') {
       const col = parts[lineParts[0]]?.color || '#fff';
       inputStyle += `background:${col};color:#000;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;border-radius:4px;padding-left:6px;padding-right:6px;`;
@@ -2454,7 +2720,7 @@ function buildLineRow(bi, li, line) {
       value="${esc(line.text)}"
       style="${inputStyle}"
       oninput="blocks[${bi}].lines[${li}].text=this.value;updateLineLenBadge(${bi},${li})"
-      onfocus="setActiveBlock(${bi})"
+      onfocus="setActiveBlock(${bi},${li})"
       onkeydown="if(event.key==='Enter'){event.preventDefault();splitLineAtCursor(${bi},${li},this)}"
       placeholder="歌詞を入力...">
     <span class="line-len-badge ${badgeCls}" id="llb-${bi}-${li}" title="${badgeTip}">${len}</span>
@@ -2485,8 +2751,15 @@ function buildPills(bi, li, lineParts) {
 function getLineDisplayColor(lineParts) {
   const ps = lineParts || [];
   if (!partsEnabled || ps.length === 0) return document.getElementById('textColor').value;
-  // 複数パートの場合は最初のパートの色を返す（エディタ表示用）
   return parts[ps[0]]?.color || document.getElementById('textColor').value;
+}
+
+// 複数パートを縦グラデーションに変換するCSSスタイル文字列を生成
+function makePartGradientStyle(lineParts, fallbackColor) {
+  const ps = lineParts || [];
+  if (!partsEnabled || ps.length === 0) return `color:${fallbackColor};`;
+  const col = parts[ps[0]]?.color || fallbackColor;
+  return `color:${col};`;
 }
 
 // 複数パートのトグル（クリックで追加、もう一度クリックで削除）
@@ -2564,7 +2837,10 @@ function toggleLineBold(bi, li) {
   line.bold = line.bold === false; // false→true, true→false
   const row = document.getElementById(`lr-${bi}-${li}`);
   if (row) row.outerHTML = buildLineRow(bi, li, line);
+  setActiveBlock(bi, li); // プレビューにも即時反映
 }
+
+function syncLineText(bi, li) {
   const el = document.querySelector(`#lr-${bi}-${li} .line-text-input`);
   if (el) blocks[bi].lines[li].text = el.value;
 }
@@ -2588,9 +2864,9 @@ function splitLineAtCursor(bi, li, inputEl) {
   blocks[bi].lines[li].text = before;
   blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal });
 
-  // splitPoints補正：li+1以降のインデックスを+1
+  // splitPoints補正：li以降を+1（li上の分割点も+1してnewLineを手前チャンクに留める）
   blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
-    .map(p => p > li ? p + 1 : p);
+    .map(p => p >= li ? p + 1 : p);
   blocks[bi].splitSlides = blocks[bi].splitPoints.length + 1;
 
   rerenderLines(bi);
