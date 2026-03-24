@@ -352,35 +352,47 @@
     .line-del-btn {
       background: transparent; border: none; color: var(--muted);
       cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px;
-      opacity: 0; transition: opacity .15s, color .15s;
+      opacity: 0.45; transition: opacity .15s, color .15s;
     }
-    .line-row:hover .line-del-btn { opacity: 1; }
-    .line-del-btn:hover { color: var(--red); }
+    .line-del-btn:hover { opacity: 1; color: var(--red); }
 
     /* 行分割ボタン */
     .line-split-btn {
       background: transparent; border: none; color: var(--muted);
       cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px;
-      opacity: 0; transition: opacity .15s, color .15s;
+      opacity: 0.45; transition: opacity .15s, color .15s;
       white-space: nowrap; font-weight: 700;
     }
-    .line-row:hover .line-split-btn { opacity: 1; }
-    .line-split-btn:hover { color: var(--green); }
+    .line-split-btn:hover { opacity: 1; color: var(--green); }
 
     /* 太字トグルボタン */
     .line-bold-btn {
       background: transparent; border: 1px solid transparent;
       color: var(--muted); cursor: pointer; font-size: 12px;
       font-weight: 900; padding: 2px 6px; border-radius: 5px;
-      opacity: 0; transition: opacity .15s, color .15s, border-color .15s;
+      opacity: 0.45; transition: opacity .15s, color .15s, border-color .15s;
       font-family: serif; flex-shrink: 0;
     }
-    .line-row:hover .line-bold-btn { opacity: 1; }
-    .line-bold-btn:hover { color: var(--text); }
+    .line-bold-btn:hover { opacity: 1; color: var(--text); }
     .line-bold-btn.active {
       opacity: 1; color: var(--amber);
       border-color: rgba(245,158,11,.4);
       background: rgba(245,158,11,.08);
+    }
+
+    /* 行ごと縁取りボタン */
+    .line-outline-btn {
+      background: transparent; border: 1px solid transparent;
+      color: var(--muted); cursor: pointer; font-size: 11px;
+      font-weight: 700; padding: 2px 6px; border-radius: 5px;
+      opacity: 0.45; transition: opacity .15s, color .15s, border-color .15s;
+      font-family: serif; flex-shrink: 0; letter-spacing: -0.5px;
+    }
+    .line-outline-btn:hover { opacity: 1; color: var(--text); }
+    .line-outline-btn.active {
+      opacity: 1; color: #67e8f9;
+      border-color: rgba(103,232,249,.4);
+      background: rgba(103,232,249,.08);
     }
 
     /* パート表示スタイル選択 */
@@ -403,11 +415,11 @@
     .line-len-badge {
       font-size: 10px; font-weight: 700; padding: 1px 5px;
       border-radius: 4px; flex-shrink: 0;
-      opacity: 0; transition: opacity .15s;
+      opacity: 0.45; transition: opacity .15s;
       pointer-events: none;
     }
-    .line-row:hover .line-len-badge { opacity: 1; }
-    .line-len-badge.warn { background: rgba(248,113,113,.18); color: var(--red); }
+    .line-len-badge:hover { opacity: 1; }
+    .line-len-badge.warn { background: rgba(248,113,113,.18); color: var(--red); opacity: 1; }
     .line-len-badge.ok   { background: rgba(90,90,136,.2);    color: var(--muted); }
 
     .add-line-btn {
@@ -900,24 +912,7 @@
       <div class="divider"></div>
       <div class="design-grid">
         <div class="design-row"><span class="design-label">背景色</span><input type="color" id="bgColor" value="#000000" oninput="updatePreview()"></div>
-        <div class="design-row">
-          <span class="design-label">背景グラデーション</span>
-          <label class="toggle-switch" style="flex-shrink:0">
-            <input type="checkbox" id="gradEnabled" onchange="onGradToggle()">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div id="gradSettings" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
-          <div class="design-row"><span class="design-label">終点色</span><input type="color" id="bgColor2" value="#1a0033" oninput="updatePreview()"></div>
-          <div class="design-row">
-            <span class="design-label">方向</span>
-            <div style="display:flex;gap:4px">
-              <button class="count-opt active" id="gdir-tb"   onclick="setGradDir('tb')"   style="font-size:10px;padding:3px 8px">縦</button>
-              <button class="count-opt"        id="gdir-lr"   onclick="setGradDir('lr')"   style="font-size:10px;padding:3px 8px">横</button>
-              <button class="count-opt"        id="gdir-diag" onclick="setGradDir('diag')" style="font-size:10px;padding:3px 8px">斜め</button>
-            </div>
-          </div>
-        </div>
+
         <div class="design-row"><span class="design-label">デフォルト文字色（全員）</span><input type="color" id="textColor" value="#ffffff" oninput="updatePreview()"></div>
         <div class="design-row"><span class="design-label">ブロック名の色</span><input type="color" id="accentColor" value="#f59e0b" oninput="updatePreview()"></div>
       </div>
@@ -1188,7 +1183,9 @@ function makeBox(id, x, y, w, h, lines, opts = {}) {
     const la   = l.align || align;
     const lsSpc  = Math.round(getLineSpacing() * 100000);
     const { size: olSz, color: olCol } = getOutline();
-    const olXml  = makeOutlineXml(olSz, olCol);
+    // 行ごとoutlineフラグ、またはl.forceOutline=trueの場合に縁取り適用
+    const applyOutline = (l.outline === true) && olSz > 0;
+    const olXml  = applyOutline ? makeOutlineXml(olSz, olCol) : '';
     return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="${lsSpc}"/></a:lnSpc></a:pPr>` +
       `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}"${uxml} dirty="0">` +
       `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
@@ -1213,7 +1210,9 @@ function makeRect(id, x, y, w, h, fill, line) {
 }
 
 function buildSlideXml(bgColor, shapes) {
-  const bg = makeBgXml(bgColor);
+  const bg = bgColor
+    ? `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bgColor.replace('#','')}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`
+    : '';
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <p:cSld>${bg}<p:spTree>
@@ -1299,15 +1298,16 @@ function buildPptxBytes(songData, design) {
     // 歌詞
     const validLines = unit.lines.filter(l => l.text.trim());
     if (validLines.length) {
-      const mainH  = nextOn && nextUnit ? 5.0 : 5.465;
-      const mainY  = 0.08;
-      const mainX  = 0.1;
-      const mainW  = 9.8;
+      const mainH  = nextOn && nextUnit ? 5.0 : 5.625; // スライド高さ=5.625インチ
+      const mainY  = 0.0;
+      const mainX  = 0.0;
+      const mainW  = 10.0; // スライド幅=10インチ
       const optFs  = calcOptimalFontSize(validLines, fs);
 
       const needPerLine = partsEnabled && (
         (partDisplayMode === 'underline' && validLines.some(l => (l.parts||[]).length > 1)) ||
-        (partDisplayMode === 'text'      && validLines.some(l => (l.parts||[]).length > 1))
+        (partDisplayMode === 'text'      && validLines.some(l => (l.parts||[]).length > 1)) ||
+        (partDisplayMode === 'bg'        && validLines.some(l => (l.parts||[]).length > 1))
       );
 
       if (!needPerLine) {
@@ -1327,7 +1327,7 @@ function buildPptxBytes(songData, design) {
               col = '000000';
             }
           }
-          return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight };
+          return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight, outline: line.outline === true };
         });
         sh.push(makeBox(id++, inch(mainX), inch(mainY), inch(mainW), inch(mainH),
           lyricLines, {font, align:'ctr', valign:'ctr'}));
@@ -1364,6 +1364,21 @@ function buildPptxBytes(songData, design) {
             // 最後に白半透明で覆う代わりに、先頭パート色を最上位レイヤーとして上書き（近似）
             // NOTE: PPTXの制限上、最も現実的な近似として「最初のパート色で全体」にする
             // →上記ループで重ねているので最後のものが表示される。逆順にする
+          } else if (partDisplayMode === 'bg' && partsEnabled && lineParts.length > 1) {
+            // 背景色グラデーション：縦に均等分割した色付き矩形を積み重ね
+            const sliceH = lineHIn / lineParts.length;
+            const charCount = [...line.text].length;
+            const rectW = Math.min(mainW, charCount * optFs / 72 * 1.1);
+            const rectX = mainX + (mainW - rectW) / 2;
+            lineParts.forEach((pi, pIdx) => {
+              const bgCol = (parts[pi]?.color || '#ffffff').replace('#','');
+              const ry = ty + pIdx * sliceH;
+              sh.push(makeRect(id++, inch(rectX), inch(ry), inch(rectW), inch(sliceH), bgCol, null));
+            });
+            // 黒文字テキストを上に重ねる
+            sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+              [{text: line.text, color: '000000', sz: optFs, bold: isBold}],
+              {font, align:'ctr', valign:'ctr'}));
           } else {
             let col = txHex;
             if (partsEnabled && lineParts.length > 0 && partDisplayMode !== 'bg') {
@@ -1669,8 +1684,8 @@ const CIRCLE_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'
 // 1行の高さ ≈ fontSize(pt) × 1.333 × 1.55(行間)
 function checkBlockOverflow(block, _unused, fontSizePt) {
   const pts = new Set(block.splitPoints || []);
-  const slideW_px = (10 - 0.8) * 96;
-  const slideH_px = (5.625 - 0.4) * 96;
+  const slideW_px = 10.0 * 96;
+  const slideH_px = 5.625 * 96;
   const charW_px  = fontSizePt * 1.333;
   const lineH_px  = fontSizePt * 1.333 * getLineSpacing();
   const maxCharsPerLine = Math.floor(slideW_px / charW_px);
@@ -1702,8 +1717,8 @@ function checkBlockOverflow(block, _unused, fontSizePt) {
 function calcOptimalFontSize(lines, maxPt = 72, minPt = 12) {
   if (!lines.length) return maxPt;
   const ls        = getLineSpacing();
-  const slideW_px = (10 - 0.2) * 96;
-  const slideH_px = (5.625 - 0.16) * 96;
+  const slideW_px = 10.0 * 96;   // 10インチ完全幅
+  const slideH_px = 5.625 * 96;  // 5.625インチ完全高
   for (let pt = maxPt; pt >= minPt; pt--) {
     const charW    = pt * 1.333;
     const lineH    = pt * 1.333 * ls;
@@ -1765,7 +1780,7 @@ function openSlideModal() {
       const lps = line.parts || [];
       let col = txHex;
       if (partsEnabled && lps.length > 0 && parts[lps[0]]) col = parts[lps[0]].color;
-      return { t: line.text, color: col, sz: optFs, bold: line.bold !== false, lineParts: lps };
+      return { t: line.text, color: col, sz: optFs, bold: line.bold !== false, lineParts: lps, outline: line.outline === true };
     });
 
     let nextText = null;
@@ -1807,10 +1822,7 @@ function renderPreviewSlide(idx) {
   const n    = _previewSlides.length;
   const frame = document.getElementById('slideFrame');
 
-  const gm = getGrad();
-  frame.style.background = gm.on
-    ? `linear-gradient(${gradCssDir(gm.dir)}, ${gm.c1}, ${gm.c2})`
-    : s.bg;
+  frame.style.background = s.bg;
   frame.style.fontFamily   = s.font + ',Noto Sans JP,sans-serif';
 
   if (s.isTitle) {
@@ -1826,11 +1838,12 @@ function renderPreviewSlide(idx) {
     const maxSz  = s.lines[0]?.sz || 40;
     const pxSize = Math.max(10, maxSz * 1.2);
     const { size: olSz, color: olCol } = getOutline();
-    const olStyle = olSz ? `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;` : '';
     const lyricsHtml = s.lines.map(l => {
       const lps  = l.lineParts || [];
       const fw   = l.bold !== false ? 700 : 400;
-      let spanStyle = `font-size:${pxSize}px;font-weight:${fw};${olStyle}`;
+      let spanStyle = `font-size:${pxSize}px;font-weight:${fw};`;
+      // 行ごと縁取り（outline フラグがある行のみ）
+      if (olSz && l.outline) spanStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`;
       if (partsEnabled && lps.length > 0) {
         if (partDisplayMode === 'underline') {
           const shadows = lps.slice(1).flatMap((pi, idx) => {
@@ -1839,8 +1852,8 @@ function renderPreviewSlide(idx) {
         });
           spanStyle += `color:${parts[lps[0]]?.color || l.color};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block;`;
         } else if (partDisplayMode === 'bg') {
-          const bgCol = parts[lps[0]]?.color || '#fff';
-          spanStyle += `background:${bgCol};color:#000;border-radius:3px;padding:0 4px;`;
+          const grad = makeBgGradient(lps, l.color);
+          spanStyle += `background:${grad};color:#000;border-radius:3px;padding:0 6px;display:inline-block;`;
         } else {
           // textモード: グラデーション
           spanStyle += makePartGradientStyle(lps, l.color);
@@ -1848,7 +1861,7 @@ function renderPreviewSlide(idx) {
       } else {
         spanStyle += `color:${l.color};`;
       }
-      return `<div style="line-height:1.5;word-break:break-all;margin-bottom:4px"><span style="${spanStyle}">${esc(l.t)}</span></div>`;
+      return `<div style="line-height:1.5;text-align:center;margin-bottom:4px"><span style="${spanStyle}">${esc(l.t)}</span></div>`;
     }).join('');
     const nextHtml = s.nextText
       ? `<div class="slide-frame-next" style="color:${s.nextColor};font-size:${Math.max(9,Math.round(pxSize*0.38))}px">${esc(s.nextText)}</div>`
@@ -2196,22 +2209,15 @@ function updatePreview() {
   const nextOn = document.getElementById('nextPreviewEnabled').checked;
   const nextOp = parseInt(document.getElementById('nextOpacity').value) / 100;
 
-  const g = getGrad();
-  const previewEl = document.getElementById('slidePreview');
-  if (g.on) {
-    previewEl.style.background = `linear-gradient(${gradCssDir(g.dir)}, ${g.c1}, ${g.c2})`;
-  } else {
-    previewEl.style.background = bg;
-  }
+  document.getElementById('slidePreview').style.background = bg;
 
   const px = Math.max(9, Math.round(size * 0.34));
   const pt = document.getElementById('prevText');
   pt.style.fontFamily = font + ',sans-serif';
   pt.style.fontSize   = px + 'px';
   pt.style.lineHeight = getLineSpacing();
-  const { size: olSz, color: olCol } = getOutline();
-  pt.style.webkitTextStroke = olSz ? `${olSz}px ${olCol}` : '';
-  pt.style.paintOrder = olSz ? 'stroke fill' : '';
+  pt.style.webkitTextStroke = '';
+  pt.style.paintOrder = '';
 
   // ── 表示するブロックを決定 ──
   // activeBlockIdx が有効なブロックを指していれば実データを使用
@@ -2255,11 +2261,13 @@ function updatePreview() {
 
     pt.innerHTML = previewLines.map(l => {
       const lps = l.parts || [];
+      const { size: olSz, color: olCol } = getOutline();
       const fw  = l.bold !== false ? 700 : 400;
+      const olStyle = (olSz && l.outline) ? `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;` : '';
       if (partsEnabled && lps.length > 0) {
         if (partDisplayMode === 'bg') {
-          const bgCol = parts[lps[0]]?.color || text;
-          return `<span style="display:block;background:${bgCol};color:#000;font-weight:${fw};border-radius:3px;margin:1px 0;padding:0 4px">${esc(l.text)}</span>`;
+          const grad = makeBgGradient(lps, text);
+          return `<div style="text-align:center;margin:1px 0"><span style="display:inline-block;background:${grad};color:#000;font-weight:${fw};${olStyle}border-radius:3px;padding:0 6px">${esc(l.text)}</span></div>`;
         }
         if (partDisplayMode === 'underline') {
           const col = parts[lps[0]]?.color || text;
@@ -2267,14 +2275,12 @@ function updatePreview() {
           const c = parts[pi]?.color || text; const y = 1 + idx * 4;
           return [`0 ${y}px 0 0 ${c}`,`0 ${y+1}px 0 0 ${c}`,`0 ${y+2}px 0 0 ${c}`];
           });
-          const pb = lps.length > 1 ? 1+(lps.length-1)*4+2 : 0;
-          return `<span style="display:inline-block;color:${col};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block">${esc(l.text)}</span><br>`;
+          return `<span style="display:inline-block;color:${col};font-weight:700;${olStyle}${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block">${esc(l.text)}</span><br>`;
         }
-        // textモード: グラデーション
         const gradStyle = makePartGradientStyle(lps, text);
-        return `<span style="display:block;font-weight:${fw};${gradStyle}">${esc(l.text)}</span>`;
+        return `<span style="display:block;font-weight:${fw};${olStyle}${gradStyle}">${esc(l.text)}</span>`;
       }
-      return `<span style="color:${text};display:block;font-weight:${fw}">${esc(l.text)}</span>`;
+      return `<span style="color:${text};display:block;font-weight:${fw};${olStyle}">${esc(l.text)}</span>`;
     }).join('');
 
     // 次の歌詞プレビュー（現在表示中のチャンクの次のスライド先頭）
@@ -2361,57 +2367,32 @@ function setActiveBlock(bi, li = 0) {
 function getLineSpacing() {
   return parseInt(document.getElementById('lineSpacing')?.value || 110) / 100;
 }
-let gradDir = 'tb'; // 'tb' | 'lr' | 'diag'
 
-function onGradToggle() {
-  const on = document.getElementById('gradEnabled').checked;
-  document.getElementById('gradSettings').style.display = on ? 'flex' : 'none';
-  updatePreview();
+// 背景色モードで複数パートをグラデーションで表現
+function makeBgGradient(lps, fallback) {
+  if (!lps || lps.length === 0) return fallback;
+  if (lps.length === 1) return parts[lps[0]]?.color || fallback;
+  const stops = lps.map((pi, idx) => {
+    const col  = parts[pi]?.color || fallback;
+    const from = Math.round(idx * 100 / lps.length);
+    const to   = Math.round((idx + 1) * 100 / lps.length);
+    return `${col} ${from}%, ${col} ${to}%`;
+  });
+  return `linear-gradient(to bottom, ${stops.join(', ')})`;
 }
-
-function setGradDir(dir) {
-  gradDir = dir;
-  ['tb','lr','diag'].forEach(d =>
-    document.getElementById('gdir-'+d)?.classList.toggle('active', d === dir)
-  );
-  updatePreview();
+// PPTX用：背景色モードの複数パートグラデーションXML
+function makeBgGradXml(lps) {
+  if (!lps || lps.length <= 1) return null;
+  const stops = lps.map((pi, idx) => {
+    const col = (parts[pi]?.color || '#ffffff').replace('#','');
+    const pos = Math.round(idx * 100000 / lps.length);
+    return `<a:gs pos="${pos}"><a:srgbClr val="${col}"/></a:gs>`;
+  });
+  // 最後のstop
+  const lastCol = (parts[lps[lps.length-1]]?.color || '#ffffff').replace('#','');
+  stops.push(`<a:gs pos="100000"><a:srgbClr val="${lastCol}"/></a:gs>`);
+  return `<a:gradFill><a:gsLst>${stops.join('')}</a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill>`;
 }
-
-function getGrad() {
-  const on  = document.getElementById('gradEnabled')?.checked;
-  const c1  = document.getElementById('bgColor')?.value || '#000000';
-  const c2  = document.getElementById('bgColor2')?.value || '#000000';
-  return { on, c1, c2, dir: gradDir };
-}
-
-// CSS linear-gradient方向
-function gradCssDir(dir) {
-  if (dir === 'lr')   return 'to right';
-  if (dir === 'diag') return '135deg';
-  return 'to bottom';
-}
-
-// PPTX gradFill XML（OOXML angle: 縦=5400000, 横=0, 斜め=2700000 (hundredths of degree)）
-function gradPptxAngle(dir) {
-  if (dir === 'lr')   return '0';
-  if (dir === 'diag') return '2700000';
-  return '5400000';
-}
-
-function makeBgXml(bgHex) {
-  const g = getGrad();
-  if (!g.on) {
-    return `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bgHex}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`;
-  }
-  const c1 = g.c1.replace('#','');
-  const c2 = g.c2.replace('#','');
-  const ang = gradPptxAngle(g.dir);
-  return `<p:bg><p:bgPr><a:gradFill><a:gsLst>` +
-    `<a:gs pos="0"><a:srgbClr val="${c1}"/></a:gs>` +
-    `<a:gs pos="100000"><a:srgbClr val="${c2}"/></a:gs>` +
-    `</a:gsLst><a:lin ang="${ang}" scaled="0"/></a:gradFill><a:effectLst/></p:bgPr></p:bg>`;
-}
-
 // 縁取り設定を取得
 function getOutline() {
   const size  = parseInt(document.getElementById('outlineSize')?.value || 0);
@@ -2557,7 +2538,7 @@ function parseLyrics() {
     const label = g.label || autoLabelBlock(idx, merged.length, fp, fpCounts);
     return {
       label,
-      lines: g.lines.map(t => ({ text: t, parts: [], bold: true })),
+      lines: g.lines.map(t => ({ text: t, parts: [], bold: true, outline: false })),
       splitSlides: 1,
       splitPoints: [],
     };
@@ -2681,7 +2662,8 @@ function renderLinesHtml(bi) {
 
 function buildLineRow(bi, li, line) {
   const lineParts  = line.parts || [];
-  const isBold     = line.bold !== false; // デフォルト太字
+  const isBold     = line.bold !== false;
+  const hasOutline = line.outline === true;
   const textColor  = getLineDisplayColor(lineParts);
   const pills      = partsEnabled ? buildPills(bi, li, lineParts) : '';
   const len        = [...(line.text || '')].length;
@@ -2695,6 +2677,11 @@ function buildLineRow(bi, li, line) {
   const baseColor = document.getElementById('textColor').value;
   let inputStyle = '';
   if (isBold) inputStyle += 'font-weight:700;';
+  // 行ごとの縁取り（グローバル設定を上書き）
+  if (hasOutline) {
+    const { size: olSz, color: olCol } = getOutline();
+    if (olSz) inputStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`;
+  }
   if (partsEnabled && lineParts.length > 0) {
     if (partDisplayMode === 'text') {
       inputStyle += makePartGradientStyle(lineParts, baseColor);
@@ -2709,8 +2696,9 @@ function buildLineRow(bi, li, line) {
       const bottomPad = shadows.length ? 1+(lineParts.length-1)*4+2 : 0;
       inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lineParts.length>1?(lineParts.length-1)*4+3:0}px;` : ''}`;
     } else if (partDisplayMode === 'bg') {
-      const col = parts[lineParts[0]]?.color || '#fff';
-      inputStyle += `background:${col};color:#000;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;border-radius:4px;padding-left:6px;padding-right:6px;`;
+      const grad = makeBgGradient(lineParts, '#fff');
+      const bg   = grad.startsWith('linear') ? grad : grad;
+      inputStyle += `background:${bg};color:#000;text-shadow:-1px -1px 0 rgba(255,255,255,.5),1px -1px 0 rgba(255,255,255,.5),-1px 1px 0 rgba(255,255,255,.5),1px 1px 0 rgba(255,255,255,.5);border-radius:4px;padding-left:6px;padding-right:6px;`;
     }
   }
 
@@ -2727,6 +2715,9 @@ function buildLineRow(bi, li, line) {
     <button class="line-bold-btn ${isBold ? 'active' : ''}"
       title="${isBold ? '太字（クリックで標準）' : '標準（クリックで太字）'}"
       onclick="toggleLineBold(${bi},${li})"><b>B</b></button>
+    <button class="line-outline-btn ${hasOutline ? 'active' : ''}"
+      title="${hasOutline ? '縁取りあり（クリックで解除）' : '縁取りなし（クリックで有効）'}"
+      onclick="toggleLineOutline(${bi},${li})">縁</button>
     <button class="line-split-btn" title="カーソル位置で行を分割（Enterキーでも可）"
       onclick="splitLineAtCursor(${bi},${li},document.querySelector('#lr-${bi}-${li} .line-text-input'))">↵</button>
     <button class="line-del-btn" onclick="removeLine(${bi},${li})">✕</button>
@@ -2834,10 +2825,19 @@ function rerenderLines(bi) {
 function toggleLineBold(bi, li) {
   syncLineText(bi, li);
   const line = blocks[bi].lines[li];
-  line.bold = line.bold === false; // false→true, true→false
+  line.bold = line.bold === false;
   const row = document.getElementById(`lr-${bi}-${li}`);
   if (row) row.outerHTML = buildLineRow(bi, li, line);
-  setActiveBlock(bi, li); // プレビューにも即時反映
+  setActiveBlock(bi, li);
+}
+
+function toggleLineOutline(bi, li) {
+  syncLineText(bi, li);
+  const line = blocks[bi].lines[li];
+  line.outline = !line.outline;
+  const row = document.getElementById(`lr-${bi}-${li}`);
+  if (row) row.outerHTML = buildLineRow(bi, li, line);
+  setActiveBlock(bi, li);
 }
 
 function syncLineText(bi, li) {
@@ -2862,7 +2862,7 @@ function splitLineAtCursor(bi, li, inputEl) {
   const partsCopy = blocks[bi].lines[li].parts ? [...blocks[bi].lines[li].parts] : [];
   const boldVal   = blocks[bi].lines[li].bold !== false;
   blocks[bi].lines[li].text = before;
-  blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal });
+  blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal, outline: blocks[bi].lines[li].outline || false });
 
   // splitPoints補正：li以降を+1（li上の分割点も+1してnewLineを手前チャンクに留める）
   blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
@@ -2895,7 +2895,7 @@ function updateLineLenBadge(bi, li) {
 }
 
 function addLine(bi) {
-  blocks[bi].lines.push({text:'', parts:[], bold:true});
+  blocks[bi].lines.push({text:'', parts:[], bold:true, outline:false});
   const li = blocks[bi].lines.length - 1;
   // splitPointsの調整不要（末尾追加なので既存インデックスに影響なし）
   rerenderLines(bi);
