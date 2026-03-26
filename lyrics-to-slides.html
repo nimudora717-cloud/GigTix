@@ -380,7 +380,29 @@
       background: rgba(245,158,11,.08);
     }
 
-    /* 行ごと縁取りボタン */
+    /* 行ごとフォントサイズ */
+    .line-sz-wrap {
+      display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+      opacity: 0.55; transition: opacity .15s;
+    }
+    .line-sz-wrap:focus-within,
+    .line-row:hover .line-sz-wrap { opacity: 1; }
+    .line-sz-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 700;
+      width: 18px; height: 18px; border-radius: 4px;
+      display: grid; place-items: center; font-family: inherit;
+      transition: color .15s, border-color .15s; line-height: 1;
+    }
+    .line-sz-btn:hover { color: var(--amber); border-color: var(--amber); }
+    .line-sz-input {
+      width: 34px; background: rgba(0,0,0,.3); border: 1px solid var(--border);
+      color: var(--amber); font-size: 11px; font-weight: 700;
+      text-align: center; border-radius: 4px; padding: 1px 2px;
+      font-family: inherit;
+    }
+    .line-sz-input:focus { outline: none; border-color: var(--amber); }
+    .line-sz-input::placeholder { color: var(--muted); font-weight: 400; }
     .line-outline-btn {
       background: transparent; border: 1px solid transparent;
       color: var(--muted); cursor: pointer; font-size: 11px;
@@ -725,19 +747,19 @@
     <!-- アフィリエイトカード -->
     <div class="modal-affiliate">
       <!-- ★Amazonアソシエイトリンクに差し替える★ -->
-      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink1">
+      <a class="affiliate-card" href="https://amzn.to/40ZyHuH" target="_blank" rel="noopener" id="affiliateLink1">
         <span class="affiliate-icon">🎤</span>
-        <span class="affiliate-label">ワイヤレスマイク<br>をAmazonで</span>
+        <span class="affiliate-label">マイク<br>をAmazonで</span>
         <span class="affiliate-sub">📦 PR</span>
       </a>
-      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink2">
-        <span class="affiliate-icon">🔊</span>
-        <span class="affiliate-label">PAスピーカー<br>をAmazonで</span>
+      <a class="affiliate-card" href="https://amzn.to/3O0hUVq" target="_blank" rel="noopener" id="affiliateLink2">
+        <span class="affiliate-icon">🎛️</span>
+        <span class="affiliate-label">インターフェース<br>をAmazonで</span>
         <span class="affiliate-sub">📦 PR</span>
       </a>
-      <a class="affiliate-card" href="https://www.amazon.co.jp" target="_blank" rel="noopener" id="affiliateLink3">
-        <span class="affiliate-icon">💡</span>
-        <span class="affiliate-label">ステージ照明<br>をAmazonで</span>
+      <a class="affiliate-card" href="https://amzn.to/4dRcy9k" target="_blank" rel="noopener" id="affiliateLink3">
+        <span class="affiliate-icon">🍵</span>
+        <span class="affiliate-label">お茶<br>をAmazonで</span>
         <span class="affiliate-sub">📦 PR</span>
       </a>
     </div>
@@ -1181,14 +1203,9 @@ function makeBox(id, x, y, w, h, lines, opts = {}) {
       : '';
     // 黒縁（背景色モード時）はrPrのlnXmlで代替できないためOutlineとして近似
     const la   = l.align || align;
-    const lsSpc  = Math.round(getLineSpacing() * 100000);
-    const { size: olSz, color: olCol } = getOutline();
-    // 行ごとoutlineフラグ、またはl.forceOutline=trueの場合に縁取り適用
-    const applyOutline = (l.outline === true) && olSz > 0;
-    const olXml  = applyOutline ? makeOutlineXml(olSz, olCol) : '';
+    const lsSpc = Math.round(getLineSpacing() * 100000);
     return `<a:p><a:pPr algn="${la}"><a:lnSpc><a:spcPct val="${lsSpc}"/></a:lnSpc></a:pPr>` +
       `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" i="${ital}"${uxml} dirty="0">` +
-      `${olXml}` +
       `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
       `${hlXml}` +
       `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
@@ -1310,13 +1327,14 @@ function buildPptxBytes(songData, design) {
         (partDisplayMode === 'text'      && validLines.some(l => (l.parts||[]).length > 1)) ||
         (partDisplayMode === 'bg'        && validLines.some(l => (l.parts||[]).length > 1))
       );
+      console.log('[デバッグ] needPerLine:', needPerLine, 'partDisplayMode:', partDisplayMode, 'partsEnabled:', partsEnabled);
 
       if (!needPerLine) {
         // ── 通常：1つのテキストボックスに全行 ──
         const lyricLines = validLines.map(line => {
           const lineParts = line.parts || [];
           const isBold    = line.bold !== false;
-          let col = txHex; let underline = false; let highlight = null;
+          let col = txHex; let underline = false; let bgColor = null;
           if (partsEnabled && lineParts.length > 0) {
             if (partDisplayMode === 'text') {
               col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
@@ -1324,16 +1342,48 @@ function buildPptxBytes(songData, design) {
               underline = true;
               col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
             } else if (partDisplayMode === 'bg') {
-              highlight = parts[lineParts[0]]?.color || null;
+              bgColor = parts[lineParts[0]]?.color || null;
               col = '000000';
             }
           }
-          return { text: line.text, color: col, sz: optFs, bold: isBold, underline, highlight, outline: line.outline === true };
+          return { text: line.text, color: col, sz: line.fontSize || optFs, bold: isBold, underline, bgColor, outline: line.outline === true };
         });
-        sh.push(makeBox(id++, inch(mainX), inch(mainY), inch(mainW), inch(mainH),
-          lyricLines, {font, align:'ctr', valign:'ctr'}));
+
+        // bgモード：パート割り当て行ごとに背景矩形を描画（全体ではなく行単位）
+        if (partsEnabled && partDisplayMode === 'bg') {
+          // 行の高さを推定して各行の後ろに矩形を配置
+          const lineHIn = optFs / 72 * getLineSpacing();
+          const totalH  = lineHIn * lyricLines.length;
+          const startY  = mainY + (mainH - totalH) / 2;
+          lyricLines.forEach((l, li) => {
+            if (!l.bgColor) return; // パート割り当てなし行はスキップ
+            const charCount  = [...(l.text||'')].length;
+            const rectW = Math.min(mainW, charCount * optFs / 72 * 1.1);
+            const rectX = mainX + (mainW - rectW) / 2;
+            const rectY = startY + li * lineHIn;
+            sh.push(makeRect(id++, inch(rectX), inch(rectY), inch(rectW), inch(lineHIn),
+              l.bgColor.replace('#',''), null));
+          });
+        }
+
+        // 縁取り設定：行ごとのoutlineフラグ＋スライダーが0より大きい場合のみ
+        const { size: olSz, color: olCol } = getOutline();
+        const hasAnyOutline = olSz > 0 && lyricLines.some(l => l.outline);
+        console.log('[縁取りデバッグ] olSz:', olSz, 'lyricLines outline flags:', lyricLines.map(l=>({text:l.text.slice(0,6), outline:l.outline})), 'hasAnyOutline:', hasAnyOutline);
+
+        if (hasAnyOutline) {
+          const result = makeBoxWithOutline(id, inch(mainX), inch(mainY), inch(mainW), inch(mainH),
+            lyricLines, {font, align:'ctr', valign:'ctr'}, olSz, olCol);
+          sh.push(result.xml);
+          id = result.nextId;
+        } else {
+          sh.push(makeBox(id++, inch(mainX), inch(mainY), inch(mainW), inch(mainH),
+            lyricLines, {font, align:'ctr', valign:'ctr'}));
+        }
       } else {
         // ── 複数パート下線モード：行ごとに個別テキストボックス＋色付き矩形下線 ──
+        const { size: olSz, color: olCol } = getOutline();
+        console.log('[デバッグ needPerLine] olSz:', olSz);
         // 行の高さ計算（インチ）
         const lineHIn  = optFs / 72 * getLineSpacing();
         const ulThickIn = 0.02;              // 1本の太さ
@@ -1359,7 +1409,7 @@ function buildPptxBytes(songData, design) {
               // 同じテキストを複数枚重ね、位置をずらして各パートの色で描画
               // PowerPointはclipPathが使えないため、同テキストを重ねて縦位置を合わせる
               sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
-                [{text: line.text, color: col, sz: optFs, bold: isBold}],
+                [{text: line.text, color: col, sz: line.fontSize || optFs, bold: isBold}],
                 {font, align:'ctr', valign:'ctr'}));
             });
             // 最後に白半透明で覆う代わりに、先頭パート色を最上位レイヤーとして上書き（近似）
@@ -1376,18 +1426,31 @@ function buildPptxBytes(songData, design) {
               const ry = ty + pIdx * sliceH;
               sh.push(makeRect(id++, inch(rectX), inch(ry), inch(rectW), inch(sliceH), bgCol, null));
             });
-            // 黒文字テキストを上に重ねる
-            sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
-              [{text: line.text, color: '000000', sz: optFs, bold: isBold}],
-              {font, align:'ctr', valign:'ctr'}));
+            // テキスト（縁取りあり/なし）
+            const lineData = [{text: line.text, color: '000000', sz: line.fontSize || optFs, bold: isBold, outline: line.outline === true}];
+            if (olSz > 0 && line.outline) {
+              const res = makeBoxWithOutline(id, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+                lineData, {font, align:'ctr', valign:'ctr'}, olSz, olCol);
+              sh.push(res.xml); id = res.nextId;
+            } else {
+              sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+                lineData, {font, align:'ctr', valign:'ctr'}));
+            }
           } else {
             let col = txHex;
-            if (partsEnabled && lineParts.length > 0 && partDisplayMode !== 'bg') {
+            if (partsEnabled && lineParts.length > 0) {
+              // 1パート：スタイル関係なく文字色変更
               col = (parts[lineParts[0]]?.color || '#'+txHex).replace('#','');
             }
-            sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
-              [{text: line.text, color: col, sz: optFs, bold: isBold}],
-              {font, align:'ctr', valign:'ctr'}));
+            const lineData = [{text: line.text, color: col, sz: line.fontSize || optFs, bold: isBold, outline: line.outline === true}];
+            if (olSz > 0 && line.outline) {
+              const res = makeBoxWithOutline(id, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+                lineData, {font, align:'ctr', valign:'ctr'}, olSz, olCol);
+              sh.push(res.xml); id = res.nextId;
+            } else {
+              sh.push(makeBox(id++, inch(mainX), inch(ty), inch(mainW), inch(lineHIn),
+                lineData, {font, align:'ctr', valign:'ctr'}));
+            }
           }
 
           // パート数分の色付き下線矩形
@@ -1844,9 +1907,12 @@ function renderPreviewSlide(idx) {
       const fw   = l.bold !== false ? 700 : 400;
       let spanStyle = `font-size:${pxSize}px;font-weight:${fw};`;
       // 行ごと縁取り（outline フラグがある行のみ）
-      if (olSz && l.outline) spanStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`;
+      if (olSz) spanStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`;
       if (partsEnabled && lps.length > 0) {
-        if (partDisplayMode === 'underline') {
+        if (lps.length === 1) {
+          // 1パート：文字色変更のみ
+          spanStyle += `color:${parts[lps[0]]?.color || l.color};`;
+        } else if (partDisplayMode === 'underline') {
           const shadows = lps.slice(1).flatMap((pi, idx) => {
           const c = parts[pi]?.color || '#fff'; const y = 1 + idx * 4;
           return [`0 ${y}px 0 0 ${c}`,`0 ${y+1}px 0 0 ${c}`,`0 ${y+2}px 0 0 ${c}`];
@@ -2263,9 +2329,16 @@ function updatePreview() {
     pt.innerHTML = previewLines.map(l => {
       const lps = l.parts || [];
       const { size: olSz, color: olCol } = getOutline();
-      const fw  = l.bold !== false ? 700 : 400;
+      const fw      = l.bold !== false ? 700 : 400;
+      const linePx  = l.fontSize ? Math.max(6, Math.round(l.fontSize * 0.34)) : null;
+      const szStyle = linePx ? `font-size:${linePx}px;` : '';
       const olStyle = (olSz && l.outline) ? `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;` : '';
       if (partsEnabled && lps.length > 0) {
+        if (lps.length === 1) {
+          // 1パート：文字色変更のみ
+          const col1 = parts[lps[0]]?.color || text;
+          return `<span style="color:${col1};display:block;font-weight:${fw};${szStyle}${olStyle}">${esc(l.text)}</span>`;
+        }
         if (partDisplayMode === 'bg') {
           const grad = makeBgGradient(lps, text);
           return `<div style="text-align:center;margin:1px 0"><span style="display:inline-block;background:${grad};color:#000;font-weight:${fw};${olStyle}border-radius:3px;padding:0 6px">${esc(l.text)}</span></div>`;
@@ -2279,9 +2352,9 @@ function updatePreview() {
           return `<span style="display:inline-block;color:${col};font-weight:700;${olStyle}${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lps.length>1?(lps.length-1)*4+3:0}px;` : ''}display:inline-block">${esc(l.text)}</span><br>`;
         }
         const gradStyle = makePartGradientStyle(lps, text);
-        return `<span style="display:block;font-weight:${fw};${olStyle}${gradStyle}">${esc(l.text)}</span>`;
+        return `<span style="display:block;font-weight:${fw};${szStyle}${olStyle}${gradStyle}">${esc(l.text)}</span>`;
       }
-      return `<span style="color:${text};display:block;font-weight:${fw};${olStyle}">${esc(l.text)}</span>`;
+      return `<span style="color:${text};display:block;font-weight:${fw};${szStyle}${olStyle}">${esc(l.text)}</span>`;
     }).join('');
 
     // 次の歌詞プレビュー（現在表示中のチャンクの次のスライド先頭）
@@ -2411,14 +2484,65 @@ function makeOutlineStyle(size, color) {
 }
 // PPTX用：縁取りXML（a:ln要素）
 function makeOutlineXml(size, color) {
-  if (!size) return '';
-  // OOXMLでテキスト縁取りは a:rPr 内の a:ln で指定
-  // w属性はEMU単位（1pt = 12700 EMU）
-  const w = Math.round(size * 12700);
-  const col = color.replace('#','');
-  return `<a:ln w="${w}" cap="rnd" cmpd="sng" algn="ctr">` +
-    `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
-    `<a:round/></a:ln>`;
+  // この関数は使用しない（シェイプ重ね方式に変更）
+  return '';
+}
+
+// 袋文字：outline===trueの行のみ縁取り色でずらし、全行を上に重ねる
+function makeBoxWithOutline(id, x, y, w, h, lines, opts, olSz, olCol) {
+  if (!olSz) return { xml: makeBox(id, x, y, w, h, lines, opts), nextId: id + 1 };
+
+  const font   = xesc(opts.font || 'Meiryo');
+  const align  = opts.align || 'ctr';
+  const valign = opts.valign || 'ctr';
+  const ls     = Math.round(getLineSpacing() * 100000);
+  const col    = olCol.replace('#','');
+  const d      = Math.round(olSz * 9525);
+
+  const offsets = [
+    [-d,-d],[0,-d],[d,-d],
+    [-d, 0],       [d, 0],
+    [-d, d],[0, d],[d, d],
+  ];
+
+  function makeOffsetBox(bid, dx, dy) {
+    const paras = lines.map(l => {
+      const sz   = Math.round((l.sz || 36) * 100);
+      const bold = l.bold !== false ? '1' : '0';
+      if (!l.outline) {
+        // 縁取り不要行は透明（位置だけ確保）
+        return `<a:p><a:pPr algn="${align}"><a:lnSpc><a:spcPct val="${ls}"/></a:lnSpc></a:pPr>` +
+          `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" dirty="0">` +
+          `<a:solidFill><a:srgbClr val="${col}"><a:alpha val="0"/></a:srgbClr></a:solidFill>` +
+          `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
+          `<a:t>${xesc(l.text)}</a:t></a:r></a:p>`;
+      }
+      return `<a:p><a:pPr algn="${align}"><a:lnSpc><a:spcPct val="${ls}"/></a:lnSpc></a:pPr>` +
+        `<a:r><a:rPr lang="ja-JP" altLang="en-US" sz="${sz}" b="${bold}" dirty="0">` +
+        `<a:solidFill><a:srgbClr val="${col}"/></a:solidFill>` +
+        `<a:latin typeface="${font}"/><a:ea typeface="${font}"/></a:rPr>` +
+        `<a:t>${xesc(l.text)}</a:t></a:r></a:p>`;
+    }).join('');
+    return `<p:sp><p:nvSpPr><p:cNvPr id="${bid}" name="ol${bid}"/>` +
+      `<p:cNvSpPr txBox="1"><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>` +
+      `<p:spPr><a:xfrm><a:off x="${x+dx}" y="${y+dy}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
+      `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>` +
+      `<p:txBody><a:bodyPr wrap="square" anchor="${valign}"><a:normAutofit/></a:bodyPr>` +
+      `<a:lstStyle/>${paras}</p:txBody></p:sp>`;
+  }
+
+  let curId = id;
+  const xmlParts = offsets.map(([dx, dy]) => {
+    const xml = makeOffsetBox(curId, dx, dy);
+    curId++;
+    return xml;
+  });
+
+  // 最前面：本来の色
+  xmlParts.push(makeBox(curId, x, y, w, h, lines, opts));
+  curId++;
+
+  return { xml: xmlParts.join('\n'), nextId: curId };
 }
 function blendHex(bgHex, fgHex, t) {
   const br = parseInt(bgHex.slice(1,3),16), bg2 = parseInt(bgHex.slice(3,5),16), bb = parseInt(bgHex.slice(5,7),16);
@@ -2543,7 +2667,7 @@ function parseLyrics() {
     const label = g.label || autoLabelBlock(idx, merged.length, fp, fpCounts);
     return {
       label,
-      lines: g.lines.map(t => ({ text: t, parts: [], bold: true, outline: false })),
+      lines: g.lines.map(t => ({ text: t, parts: [], bold: true, outline: false, fontSize: null })),
       splitSlides: 1,
       splitPoints: [],
     };
@@ -2682,28 +2806,24 @@ function buildLineRow(bi, li, line) {
   const baseColor = document.getElementById('textColor').value;
   let inputStyle = '';
   if (isBold) inputStyle += 'font-weight:700;';
-  // 行ごとの縁取り（グローバル設定を上書き）
-  if (hasOutline) {
-    const { size: olSz, color: olCol } = getOutline();
-    if (olSz) inputStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`;
-  }
+  // 行ごとの縁取り（hasOutline=trueの行のみ）
+  { const { size: olSz, color: olCol } = getOutline();
+  if (olSz && hasOutline) inputStyle += `-webkit-text-stroke:${olSz}px ${olCol};paint-order:stroke fill;`; }
   if (partsEnabled && lineParts.length > 0) {
-    if (partDisplayMode === 'text') {
-      inputStyle += makePartGradientStyle(lineParts, baseColor);
+    if (lineParts.length === 1) {
+      // 1パート：スタイル関係なく文字色変更
+      inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};`;
     } else if (partDisplayMode === 'underline') {
       inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};`;
-      // パート数分の色付き下線をbox-shadowで縦に積み重ね（1本3px、間隔2px）
       const shadows = lineParts.slice(1).flatMap((pi, idx) => {
         const col    = parts[pi]?.color || '#fff';
         const y = 1 + idx * 4;
         return [`0 ${y}px 0 0 ${col}`,`0 ${y+1}px 0 0 ${col}`,`0 ${y+2}px 0 0 ${col}`];
       });
-      const bottomPad = shadows.length ? 1+(lineParts.length-1)*4+2 : 0;
-      inputStyle += `color:${parts[lineParts[0]]?.color || baseColor};font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lineParts.length>1?(lineParts.length-1)*4+3:0}px;` : ''}`;
+      inputStyle += `font-weight:700;${shadows.length ? `box-shadow:${shadows.join(',')};overflow:visible;margin-bottom:${lineParts.length>1?(lineParts.length-1)*4+3:0}px;` : ''}`;
     } else if (partDisplayMode === 'bg') {
       const grad = makeBgGradient(lineParts, '#fff');
-      const bg   = grad.startsWith('linear') ? grad : grad;
-      inputStyle += `background:${bg};color:#000;text-shadow:-1px -1px 0 rgba(255,255,255,.5),1px -1px 0 rgba(255,255,255,.5),-1px 1px 0 rgba(255,255,255,.5),1px 1px 0 rgba(255,255,255,.5);border-radius:4px;padding-left:6px;padding-right:6px;`;
+      inputStyle += `background:${grad};color:#000;text-shadow:-1px -1px 0 rgba(255,255,255,.5),1px -1px 0 rgba(255,255,255,.5),-1px 1px 0 rgba(255,255,255,.5),1px 1px 0 rgba(255,255,255,.5);border-radius:4px;padding-left:6px;padding-right:6px;`;
     }
   }
 
@@ -2723,6 +2843,15 @@ function buildLineRow(bi, li, line) {
     <button class="line-outline-btn ${hasOutline ? 'active' : ''}"
       title="${hasOutline ? '縁取りあり（クリックで解除）' : '縁取りなし（クリックで有効）'}"
       onclick="toggleLineOutline(${bi},${li})">縁</button>
+    <div class="line-sz-wrap" title="行ごとのフォントサイズ（空欄=自動）">
+      <button class="line-sz-btn" onclick="changeLineFontSize(${bi},${li},-2)">－</button>
+      <input class="line-sz-input" type="number" min="8" max="120"
+        value="${line.fontSize || ''}"
+        placeholder="自動"
+        onchange="setLineFontSize(${bi},${li},this.value)"
+        onclick="this.select()">
+      <button class="line-sz-btn" onclick="changeLineFontSize(${bi},${li},+2)">＋</button>
+    </div>
     <button class="line-split-btn" title="カーソル位置で行を分割（Enterキーでも可）"
       onclick="splitLineAtCursor(${bi},${li},document.querySelector('#lr-${bi}-${li} .line-text-input'))">↵</button>
     <button class="line-del-btn" onclick="removeLine(${bi},${li})">✕</button>
@@ -2836,6 +2965,24 @@ function toggleLineBold(bi, li) {
   setActiveBlock(bi, li);
 }
 
+function setLineFontSize(bi, li, val) {
+  const n = parseInt(val);
+  blocks[bi].lines[li].fontSize = (isNaN(n) || val === '') ? null : Math.min(120, Math.max(8, n));
+  updatePreview();
+}
+
+function changeLineFontSize(bi, li, delta) {
+  syncLineText(bi, li);
+  const globalFs = parseInt(document.getElementById('fontSize').value) || 40;
+  const cur = blocks[bi].lines[li].fontSize || globalFs;
+  const next = Math.min(120, Math.max(8, cur + delta));
+  blocks[bi].lines[li].fontSize = next;
+  // 入力欄を更新
+  const inp = document.querySelector(`#lr-${bi}-${li} .line-sz-input`);
+  if (inp) inp.value = next;
+  updatePreview();
+}
+
 function toggleLineOutline(bi, li) {
   syncLineText(bi, li);
   const line = blocks[bi].lines[li];
@@ -2867,7 +3014,7 @@ function splitLineAtCursor(bi, li, inputEl) {
   const partsCopy = blocks[bi].lines[li].parts ? [...blocks[bi].lines[li].parts] : [];
   const boldVal   = blocks[bi].lines[li].bold !== false;
   blocks[bi].lines[li].text = before;
-  blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal, outline: blocks[bi].lines[li].outline || false });
+  blocks[bi].lines.splice(li + 1, 0, { text: after, parts: partsCopy, bold: boldVal, outline: blocks[bi].lines[li].outline || false, fontSize: null });
 
   // splitPoints補正：li以降を+1（li上の分割点も+1してnewLineを手前チャンクに留める）
   blocks[bi].splitPoints = (blocks[bi].splitPoints || [])
@@ -2900,7 +3047,7 @@ function updateLineLenBadge(bi, li) {
 }
 
 function addLine(bi) {
-  blocks[bi].lines.push({text:'', parts:[], bold:true, outline:false});
+  blocks[bi].lines.push({text:'', parts:[], bold:true, outline:false, fontSize: null});
   const li = blocks[bi].lines.length - 1;
   // splitPointsの調整不要（末尾追加なので既存インデックスに影響なし）
   rerenderLines(bi);
