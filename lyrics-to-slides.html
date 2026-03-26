@@ -606,16 +606,39 @@
       display: flex; gap: 12px; margin-bottom: 18px;
     }
     .affiliate-card {
-      flex: 1; background: rgba(255,255,255,.04);
-      border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; display: flex; flex-direction: column;
-      align-items: center; gap: 6px; cursor: pointer;
-      transition: all .15s; text-decoration: none;
+      flex: 1; background: #18182e;
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 10px 10px; display: flex; flex-direction: column;
+      align-items: center; gap: 8px; cursor: pointer;
+      transition: all .2s; text-decoration: none; position: relative;
+      overflow: hidden;
     }
-    .affiliate-card:hover { border-color: var(--amber); background: rgba(245,158,11,.05); }
-    .affiliate-icon { font-size: 26px; }
-    .affiliate-label { font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; line-height: 1.4; }
-    .affiliate-sub { font-size: 10px; color: var(--border-hi); text-align: center; }
+    .affiliate-card::before {
+      content: 'PR';
+      position: absolute; top: 6px; right: 8px;
+      font-size: 9px; font-weight: 700; color: var(--amber);
+      letter-spacing: .5px; opacity: .7;
+    }
+    .affiliate-card:hover {
+      border-color: var(--amber);
+      background: #1e1e3a;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .affiliate-card img {
+      width: 72px; height: 72px; object-fit: contain;
+      border-radius: 8px; background: #fff; padding: 6px;
+    }
+    .affiliate-label {
+      font-size: 11px; font-weight: 600; color: var(--text);
+      text-align: center; line-height: 1.5;
+    }
+    .affiliate-btn {
+      font-size: 10px; font-weight: 700;
+      background: var(--amber); color: #000;
+      padding: 3px 10px; border-radius: 100px;
+      letter-spacing: .3px; margin-top: 2px;
+    }
 
     /* カウントダウン + ダウンロードボタン */
     .modal-footer { display: flex; align-items: center; gap: 12px; }
@@ -748,19 +771,19 @@
     <div class="modal-affiliate">
       <!-- ★Amazonアソシエイトリンクに差し替える★ -->
       <a class="affiliate-card" href="https://amzn.to/40ZyHuH" target="_blank" rel="noopener" id="affiliateLink1">
-        <img src="https://images-na.ssl-images-amazon.com/images/P/B0CCSVYWMH.09.LZZZZZZZ.jpg" alt="マイク" style="width:64px;height:64px;object-fit:contain;border-radius:6px;background:#fff;padding:4px">
-        <span class="affiliate-label">マイク<br>をAmazonで</span>
-        <span class="affiliate-sub">📦 PR</span>
+        <img src="https://images-na.ssl-images-amazon.com/images/P/B0CCSVYWMH.09.LZZZZZZZ.jpg" alt="マイク">
+        <span class="affiliate-label">SHURE SM7B<br>マイク</span>
+        <span class="affiliate-btn">Amazonで見る</span>
       </a>
       <a class="affiliate-card" href="https://amzn.to/3O0hUVq" target="_blank" rel="noopener" id="affiliateLink2">
-        <img src="https://images-na.ssl-images-amazon.com/images/P/B0815V2N4X.09.LZZZZZZZ.jpg" alt="インターフェース" style="width:64px;height:64px;object-fit:contain;border-radius:6px;background:#fff;padding:4px">
-        <span class="affiliate-label">インターフェース<br>をAmazonで</span>
-        <span class="affiliate-sub">📦 PR</span>
+        <img src="https://images-na.ssl-images-amazon.com/images/P/B0815V2N4X.09.LZZZZZZZ.jpg" alt="インターフェース">
+        <span class="affiliate-label">MOTU M2<br>オーディオI/F</span>
+        <span class="affiliate-btn">Amazonで見る</span>
       </a>
       <a class="affiliate-card" href="https://amzn.to/4dRcy9k" target="_blank" rel="noopener" id="affiliateLink3">
-        <img src="https://images-na.ssl-images-amazon.com/images/P/B0BYDPL5LD.09.LZZZZZZZ.jpg" alt="お茶" style="width:64px;height:64px;object-fit:contain;border-radius:6px;background:#fff;padding:4px">
-        <span class="affiliate-label">お茶<br>をAmazonで</span>
-        <span class="affiliate-sub">📦 PR</span>
+        <img src="https://images-na.ssl-images-amazon.com/images/P/B0BYDPL5LD.09.LZZZZZZZ.jpg" alt="お茶">
+        <span class="affiliate-label">綾鷹 茶葉のあまみ<br>525ml</span>
+        <span class="affiliate-btn">Amazonで見る</span>
       </a>
     </div>
 
